@@ -1,3 +1,61 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --app-bg: #f7f8fc;
+    --app-surface: #ffffff;
+    --app-border: #e5e7eb;
+    --app-text: #1e293b;
+    --app-muted: #64748b;
+    --app-primary: #4f46e5;
+  }
+
+  html {
+    min-width: 320px;
+    background: var(--app-bg);
+  }
+
+  body {
+    min-width: 320px;
+    margin: 0;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(99, 102, 241, .08), transparent 30rem),
+      var(--app-bg);
+    color: var(--app-text);
+    font-family: 'CustomFont', Tahoma, Arial, sans-serif;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 3px solid rgba(99, 102, 241, .3);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .app-surface {
+    @apply rounded-2xl border bg-white shadow-sm;
+    border-color: var(--app-border);
+  }
+
+  .app-page-title {
+    @apply text-xl font-bold tracking-tight text-slate-800 md:text-2xl;
+  }
+
+  .app-page-subtitle {
+    @apply mt-1 text-sm text-slate-500;
+  }
+}

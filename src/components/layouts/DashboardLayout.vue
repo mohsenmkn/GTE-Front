@@ -57,32 +57,6 @@ if (typeof window !== 'undefined') {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-
-  /* دسکتاپ: جا برای سایدبار */
-  padding-right: 280px;
-  box-sizing: border-box;
-}
-
-.dashboard-layout__content {
-  flex: 1;
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-/* موبایل: سایدبار drawer است => padding حذف */
-@media (max-width: 1024px) {
-  .dashboard-layout__main {
-    padding-right: 0;
-  }
-}
-
-
-.dashboard-layout__main {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-
-  /* Sidebar = 292px */
   padding-right: 292px;
 
   box-sizing: border-box;
@@ -90,7 +64,10 @@ if (typeof window !== 'undefined') {
 
 .dashboard-layout__content {
   flex: 1;
-  padding: 16px;
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 20px clamp(16px, 2vw, 32px) 32px;
   box-sizing: border-box;
 }
 

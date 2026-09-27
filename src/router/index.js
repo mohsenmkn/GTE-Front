@@ -427,7 +427,7 @@ const router = createRouter({
                     path: '/hr/organizational-structure',
                     name: 'hr.organizational-structure',
                     component: () =>
-                        import('@/views/hr/OrganizationalStructure.vue'),
+                        import('@/views/HR/Organizationalstructure.vue'),
 
                     meta: {
                         requiresAuth: true,
