@@ -654,50 +654,6 @@ export const usePreWarehouseStore = defineStore('preWarehouse', {
             }
         },
 
-        // ═══════════════════════════════════════
-        // Custodian Approval (تایید/رد متولی)
-        // ═══════════════════════════════════════
-        async approveByCustodian(id, notes) {
-            try {
-                const response = await api.post(`/pre-warehouse/purchases/${id}/approve-custodian`, {
-                    notes,
-                })
-                showToast({
-                    severity: 'success',
-                    summary: 'موفق',
-                    detail: response.data.message,
-                })
-                return response.data
-            } catch (error) {
-                showToast({
-                    severity: 'error',
-                    summary: 'خطا',
-                    detail: error.response?.data?.message || 'خطا در تایید',
-                })
-                throw error
-            }
-        },
-
-        async rejectByCustodian(id, reason) {
-            try {
-                const response = await api.post(`/pre-warehouse/purchases/${id}/reject-custodian`, {
-                    reason,
-                })
-                showToast({
-                    severity: 'success',
-                    summary: 'موفق',
-                    detail: response.data.message,
-                })
-                return response.data
-            } catch (error) {
-                showToast({
-                    severity: 'error',
-                    summary: 'خطا',
-                    detail: error.response?.data?.message || 'خطا در رد کردن',
-                })
-                throw error
-            }
-        },
 
         // ═══════════════════════════════════════
         // Destination Rejection (رد انبار مقصد)
@@ -797,6 +753,218 @@ export const usePreWarehouseStore = defineStore('preWarehouse', {
                 throw error
             }
         },
+
+// ══════════════════════════════════════
+// Custodian Final Approval (تایید نهایی متولی)
+// ═══════════════════════════════════════
+        async finalApproveByCustodian(id, notes) {
+            try {
+                const response = await api.post(`/pre-warehouse/purchases/${id}/final-approve-custodian`, {
+                    notes,
+                })
+                showToast({
+                    severity: 'success',
+                    summary: 'موفق',
+                    detail: response.data.message,
+                })
+                return response.data
+            } catch (error) {
+                showToast({
+                    severity: 'error',
+                    summary: 'خطا',
+                    detail: error.response?.data?.message || 'خطا در تایید',
+                })
+                throw error
+            }
+        },
+
+
+
+// ═══════════════════════════════════════
+// Custodian Approval (تایید/رد متولی)
+// ═══════════════════════════════════════
+        async approveByCustodian(id, notes, temporaryExits = []) {
+            try {
+                const response = await api.post(`/pre-warehouse/purchases/${id}/approve-custodian`, {
+                    notes,
+                    temporary_exits: temporaryExits,
+                })
+                showToast({
+                    severity: 'success',
+                    summary: 'موفق',
+                    detail: response.data.message,
+                })
+                return response.data
+            } catch (error) {
+                showToast({
+                    severity: 'error',
+                    summary: 'خطا',
+                    detail: error.response?.data?.message || 'خطا در تایید',
+                })
+                throw error
+            }
+        },
+
+        async rejectByCustodian(id, reason) {
+            try {
+                const response = await api.post(`/pre-warehouse/purchases/${id}/reject-custodian`, {
+                    reason,
+                })
+                showToast({
+                    severity: 'success',
+                    summary: 'موفق',
+                    detail: response.data.message,
+                })
+                return response.data
+            } catch (error) {
+                showToast({
+                    severity: 'error',
+                    summary: 'خطا',
+                    detail: error.response?.data?.message || 'خطا در رد کردن',
+                })
+                throw error
+            }
+        },
+
+// ═══════════════════════════════════════
+// Commercial Voucher (ورود حواله بازرگانی)
+// ═══════════════════════════════════════
+        async enterVoucher(id, voucherNumber) {
+            try {
+                const response = await api.post(`/pre-warehouse/purchases/${id}/enter-voucher`, {
+                    voucher_number: voucherNumber,
+                })
+                showToast({
+                    severity: 'success',
+                    summary: 'موفق',
+                    detail: response.data.message,
+                })
+                return response.data
+            } catch (error) {
+                showToast({
+                    severity: 'error',
+                    summary: 'خطا',
+                    detail: error.response?.data?.message || 'خطا در ثبت حواله',
+                })
+                throw error
+            }
+        },
+
+// ═══════════════════════════════════════
+// Warehouse Receipt (ورود رسید انبار)
+// ═══════════════════════════════════════
+        async enterWarehouseReceipt(id, receiptNumber) {
+            try {
+                const response = await api.post(`/pre-warehouse/purchases/${id}/enter-receipt`, {
+                    receipt_number: receiptNumber,
+                })
+                showToast({
+                    severity: 'success',
+                    summary: 'موفق',
+                    detail: response.data.message,
+                })
+                return response.data
+            } catch (error) {
+                showToast({
+                    severity: 'error',
+                    summary: 'خطا',
+                    detail: error.response?.data?.message || 'خطا در ثبت رسید',
+                })
+                throw error
+            }
+        },
+
+// ═══════════════════════════════════════════
+// عدم انطباق - ثبت تاریخ تحویل به بازرگانی
+// ═══════════════════════════════════════════
+        async scheduleNonconformityHandover(id, handoverDate) {
+            try {
+                const response = await api.post(`/pre-warehouse/purchases/${id}/nonconformity/handover-date`, {
+                    handover_date: handoverDate,
+                })
+                showToast({
+                    severity: 'success',
+                    summary: 'موفق',
+                    detail: response.data.message,
+                })
+                return response.data
+            } catch (error) {
+                showToast({
+                    severity: 'error',
+                    summary: 'خطا',
+                    detail: error.response?.data?.message || 'خطا در ثبت تاریخ تحویل',
+                })
+                throw error
+            }
+        },
+
+// ══════════════════════════════════════════
+// عدم انطباق - تایید تحویل توسط بازرگانی
+// ═══════════════════════════════════════════
+        async confirmNonconformityPickup(id) {
+            try {
+                const response = await api.post(`/pre-warehouse/purchases/${id}/nonconformity/confirm-pickup`)
+                showToast({
+                    severity: 'success',
+                    summary: 'موفق',
+                    detail: response.data.message,
+                })
+                return response.data
+            } catch (error) {
+                showToast({
+                    severity: 'error',
+                    summary: 'خطا',
+                    detail: error.response?.data?.message || 'خطا در تایید تحویل',
+                })
+                throw error
+            }
+        },
+
+// ═══════════════════════════════════════════
+// عدم انطباق - ثبت تاریخ تحویل به بازرگانی (توسط انبار)
+// ═══════════════════════════════════════════
+        async scheduleWarehouseReturn(id, handoverDate, notes) {
+            try {
+                const response = await api.post(`/pre-warehouse/purchases/${id}/schedule-warehouse-return`, {
+                    scheduled_at: handoverDate,
+                    notes: notes,
+                })
+                showToast({ severity: 'success', summary: 'موفق', detail: response.data.message })
+                return response.data
+            } catch (error) {
+                showToast({ severity: 'error', summary: 'خطا', detail: error.response?.data?.message || 'خطا در ثبت تاریخ' })
+                throw error
+            }
+        },
+
+// ═══════════════════════════════════════════
+// عدم انطباق - تایید تحویل گرفتن توسط بازرگانی
+// ═══════════════════════════════════════════
+        async confirmCommercialReceived(id) {
+            try {
+                const response = await api.post(`/pre-warehouse/purchases/${id}/confirm-commercial-received`)
+                showToast({ severity: 'success', summary: 'موفق', detail: response.data.message })
+                return response.data
+            } catch (error) {
+                showToast({ severity: 'error', summary: 'خطا', detail: error.response?.data?.message || 'خطا در تایید تحویل' })
+                throw error
+            }
+        },
+
+// ═══════════════════════════════════════════
+// عدم انطباق - ثبت برگشت به تأمین‌کننده
+// ═══════════════════════════════════════════
+        async confirmSupplierReturned(id) {
+            try {
+                const response = await api.post(`/pre-warehouse/purchases/${id}/confirm-supplier-returned`)
+                showToast({ severity: 'success', summary: 'موفق', detail: response.data.message })
+                return response.data
+            } catch (error) {
+                showToast({ severity: 'error', summary: 'خطا', detail: error.response?.data?.message || 'خطا در ثبت برگشت' })
+                throw error
+            }
+        },
+
 
 
     },

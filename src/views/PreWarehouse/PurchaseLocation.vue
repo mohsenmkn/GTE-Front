@@ -8,9 +8,9 @@
           @click="$router.back()"
           class="mb-4"
       />
-      <h1 class="text-2xl font-bold text-gray-800">تعیین محل نگهداری</h1>
+      <h1 class="text-2xl font-bold text-gray-800">{{ isFinalAllocation ? 'تخصیص نهایی انبار و تعیین محل نگهداری' : 'تعیین محل نگهداری' }}</h1>
       <p class="text-gray-500 mt-1">
-        انبار: <strong>{{ allocation?.warehouse?.name }}</strong>
+        انبار فعلی: <strong>{{ allocation?.warehouse?.name }}</strong>
       </p>
     </div>
 
@@ -24,28 +24,28 @@
                 <p class="text-gray-500 text-sm">مقدار تخصیص‌یافته به انبار</p>
                 <p class="text-xl font-bold text-blue-600">
                   {{ allocation.allocated_qty }}
-                  {{ allocation.purchase?.unit_of_measurement }}
+                  {{ allocation.purchase?.unit_of_measurement || allocation.unit_of_measurement || '' }}
                 </p>
               </div>
               <div>
                 <p class="text-gray-500 text-sm">تخصیص‌یافته به محل‌ها</p>
                 <p class="text-xl font-bold text-purple-600">
                   {{ totalAssigned }}
-                  {{ allocation.purchase?.unit_of_measurement }}
+                  {{ allocation.purchase?.unit_of_measurement || allocation.unit_of_measurement || '' }}
                 </p>
               </div>
               <div>
                 <p class="text-gray-500 text-sm">باقیمانده</p>
                 <p class="text-xl font-bold text-green-600">
                   {{ remainingQty }}
-                  {{ allocation.purchase?.unit_of_measurement }}
+                  {{ allocation.purchase?.unit_of_measurement || allocation.unit_of_measurement || '' }}
                 </p>
               </div>
             </div>
           </div>
 
           <!-- Existing Locations -->
-          <div v-if="allocation.locations?.length">
+          <div v-if="allocation.locations?.length && !isFinalAllocation">
             <h3 class="font-medium text-gray-700 mb-3 flex items-center gap-2">
               <i class="pi pi-map-marker text-blue-600"></i>
               محل‌های تخصیص‌یافته:
@@ -66,7 +66,7 @@
                   </div>
                 </div>
                 <Tag
-                    :value="`${loc.assigned_qty} ${allocation.purchase?.unit_of_measurement}`"
+                    :value="`${loc.assigned_qty} ${allocation.purchase?.unit_of_measurement || allocation.unit_of_measurement || ''}`"
                     severity="info"
                 />
               </div>
@@ -81,6 +81,20 @@
             </h3>
 
             <form @submit.prevent="submitLocation" class="space-y-4">
+              <div v-if="isFinalAllocation">
+                <label class="block text-sm font-medium text-gray-700 mb-2">انبار مقصد <span class="text-red-500">*</span></label>
+                <Select
+                    v-model="form.warehouse_id"
+                    :options="store.warehouses"
+                    option-label="name"
+                    option-value="id"
+                    placeholder="انتخاب انبار مقصد..."
+                    class="w-full"
+                    filter
+                    :disabled="submitting"
+                    @update:model-value="onFinalWarehouseChange"
+                />
+              </div>
               <!-- Select Location -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -95,7 +109,7 @@
                     class="w-full"
                     filter
                     :loading="loadingLocations"
-                    :disabled="submitting"
+                    :disabled="submitting || (isFinalAllocation && !form.warehouse_id)"
                 >
                   <template #option="slotProps">
                     <div class="flex items-center gap-2">
@@ -141,7 +155,7 @@
                     :disabled="submitting"
                 />
                 <small class="text-gray-500">
-                  حداکثر: {{ remainingQty }} {{ allocation.purchase?.unit_of_measurement }}
+                  حداکثر: {{ remainingQty }} {{ allocation.purchase?.unit_of_measurement || allocation.unit_of_measurement || '' }}
                 </small>
               </div>
 
@@ -201,27 +215,47 @@ const store = usePreWarehouseStore()
 const toast = useToast()
 
 const allocation = ref(null)
+const purchaseStatus = ref(null)
 const availableLocations = ref([])
 const loadingLocations = ref(false)
 const submitting = ref(false)
+const finalAllocationSaved = ref(false)
 
 const form = ref({
+  warehouse_id: null,
   warehouse_location_id: null,
   assigned_qty: 1,
   description: '',
 })
 
+const isFinalAllocation = computed(() => purchaseStatus.value === 'pending_final_allocation')
+
 const totalAssigned = computed(() => {
-  return allocation.value?.locations?.reduce(
-      (sum, loc) => sum + loc.assigned_qty,
-      0
-  ) || 0
+  if (isFinalAllocation.value && !finalAllocationSaved.value) return 0
+  return allocation.value?.locations?.reduce((sum, loc) => sum + Number(loc.assigned_qty || 0), 0) || 0
 })
 
 const remainingQty = computed(() => {
-  if (!allocation.value) return 0
-  return allocation.value.allocated_qty - totalAssigned.value
+  if (!allocation.value || finalAllocationSaved.value) return 0
+  if (isFinalAllocation.value) {
+    return Math.max(0, Number(allocation.value.allocated_qty || 0) - Number(allocation.value.temporary_exit_qty || 0))
+  }
+  return Math.max(0, Number(allocation.value.allocated_qty || 0) - totalAssigned.value)
 })
+
+const onFinalWarehouseChange = async (warehouseId) => {
+  form.value.warehouse_location_id = null
+  availableLocations.value = []
+  if (!warehouseId) return
+  loadingLocations.value = true
+  try {
+    await store.fetchWarehouseLocations(warehouseId)
+    availableLocations.value = (store.warehouseLocations || []).filter(location => location.is_active !== false && (!isFinalAllocation.value || location.is_quarantine !== true))
+    form.value.assigned_qty = remainingQty.value
+  } finally {
+    loadingLocations.value = false
+  }
+}
 
 const goToWarehouseLocations = () => {
   if (allocation.value?.warehouse?.id) {
@@ -253,6 +287,7 @@ const submitLocation = async () => {
     return
   }
 
+  const wasFinalAllocation = isFinalAllocation.value
   submitting.value = true
   try {
     // پیدا کردن نام محل از لیست
@@ -261,6 +296,7 @@ const submitLocation = async () => {
     )
 
     const payload = {
+      ...(isFinalAllocation.value ? { warehouse_id: form.value.warehouse_id } : {}),
       warehouse_location_id: form.value.warehouse_location_id,
       location_name: selectedLocation?.name || '',
       assigned_qty: form.value.assigned_qty,
@@ -272,14 +308,17 @@ const submitLocation = async () => {
 
     // Reload allocation
     const purchase = await store.fetchPurchase(route.params.id)
+    purchaseStatus.value = purchase.status
     allocation.value = purchase.allocations?.find(
         (a) => a.id === allocation.value.id
     )
+    finalAllocationSaved.value = wasFinalAllocation && allocation.value?.status === 'location_assigned'
 
     // Reset form
     form.value = {
+      warehouse_id: isFinalAllocation.value ? form.value.warehouse_id : null,
       warehouse_location_id: null,
-      assigned_qty: 1,
+      assigned_qty: isFinalAllocation.value ? remainingQty.value : 1,
       description: '',
     }
 
@@ -300,12 +339,13 @@ const submitLocation = async () => {
 }
 
 const loadLocations = async () => {
-  if (!allocation.value?.warehouse?.id) return
+  const warehouseId = isFinalAllocation.value ? form.value.warehouse_id : allocation.value?.warehouse?.id
+  if (!warehouseId) return
 
   loadingLocations.value = true
   try {
-    const response = await store.fetchWarehouseLocations(allocation.value.warehouse.id)
-    availableLocations.value = store.warehouseLocations || []
+    await store.fetchWarehouseLocations(warehouseId)
+    availableLocations.value = (store.warehouseLocations || []).filter(location => location.is_active !== false && (!isFinalAllocation.value || location.is_quarantine !== true))
   } catch (error) {
     console.error('Error loading locations:', error)
   } finally {
@@ -316,10 +356,12 @@ const loadLocations = async () => {
 onMounted(async () => {
   try {
     const purchase = await store.fetchPurchase(route.params.id)
+    purchaseStatus.value = purchase.status
     allocation.value = purchase.allocations?.find(
         (a) => a.id === parseInt(route.params.allocationId)
     )
 
+    await store.fetchWarehouses()
     if (!allocation.value) {
       toast.add({
         severity: 'error',
@@ -331,6 +373,10 @@ onMounted(async () => {
       return
     }
 
+    if (purchase.status === 'pending_final_allocation') {
+      form.value.warehouse_id = allocation.value.warehouse_id
+      form.value.assigned_qty = Math.max(0, Number(allocation.value.allocated_qty || 0) - Number(allocation.value.temporary_exit_qty || 0))
+    }
     await loadLocations()
   } catch (error) {
     console.error('Error loading data:', error)

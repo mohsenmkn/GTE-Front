@@ -270,7 +270,7 @@
                 </button>
 
                 <button
-                    v-if="canAllocate && ['registered', 'pending_reallocation'].includes(data.status)"
+                    v-if="canAllocate && ['registered', 'pending_allocation', 'pending_reallocation'].includes(data.status)"
                     class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
                     @click="goAllocate(data.id)"
                     title="تخصیص انبار"
@@ -325,20 +325,51 @@ const canApprove = computed(() => authStore.can('pre_warehouse.custodian_approve
 
 // --- Standardized Status Configuration (کامل‌شده با تمام وضعیت‌های بک‌اند) ---
 const STATUS_CONFIG = {
-  registered:                  { label: 'ثبت شده', icon: 'pi pi-file', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-100' },
+  registered:                   { label: 'ثبت شده', icon: 'pi pi-file', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-100' },
   pending_warehouse_approval:  { label: 'در انتظار تایید انبار', icon: 'pi pi-clock', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100' },
   approved_by_warehouse:       { label: 'تایید شده توسط انبار', icon: 'pi pi-check-circle', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100' },
-  pending_custodian_approval:  { label: 'در انتظار تایید متولی', icon: 'pi pi-user-clock', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-100' },
-  approved_by_custodian:       { label: 'تایید شده توسط متولی', icon: 'pi pi-verified', bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-100' },
+  pending_custodian_approval:  { label: 'در انتظار تایید متولی', icon: 'pi pi-user-check', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-100' },
   pending_allocation:          { label: 'در انتظار تخصیص', icon: 'pi pi-share-alt', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-100' },
   allocated:                   { label: 'تخصیص یافته', icon: 'pi pi-send', bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-100' },
-  pending_location_assignment: { label: 'در انتظار تعیین محل', icon: 'pi pi-map-marker', bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-100' },
-  location_assigned:           { label: 'محل تعیین شده', icon: 'pi pi-map', bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-100' },
-  finalized:                   { label: 'نهایی شده', icon: 'pi pi-lock', bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-200' },
+  in_quarantine:               { label: 'در قرنطینه', icon: 'pi pi-shield', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-100' },  // ✅ جدید
+  pending_commercial_voucher:  { label: 'در انتظار حواله بازرگانی', icon: 'pi pi-file-edit', bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-100' },
+  voucher_entered:             { label: 'حواله وارد شد', icon: 'pi pi-file-check', bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-100' },
+  pending_warehouse_receipt:   { label: 'در انتظار رسید انبار', icon: 'pi pi-inbox', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100' },
+  pending_final_allocation:    { label: 'در انتظار تخصیص نهایی انبار و تعیین محل', icon: 'pi pi-map-marker', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-100' },
+  receipt_entered:             { label: 'رسید انبار وارد شد', icon: 'pi pi-inbox', bg: 'bg-lime-50', text: 'text-lime-700', border: 'border-lime-100' },
+  fully_received:              { label: 'دریافت کامل شد', icon: 'pi pi-check-double', bg: 'bg-slate-800', text: 'text-white', border: 'border-slate-900' },
   rejected_by_warehouse:       { label: 'رد شده توسط انبار', icon: 'pi pi-times-circle', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-100' },
   rejected_by_custodian:       { label: 'رد شده توسط متولی', icon: 'pi pi-times-circle', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-100' },
   rejected_by_destination:     { label: 'رد شده توسط مقصد', icon: 'pi pi-ban', bg: 'bg-pink-50', text: 'text-pink-700', border: 'border-pink-100' },
   pending_reallocation:        { label: 'در انتظار تخصیص مجدد', icon: 'pi pi-refresh', bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-100' },
+  pending_warehouse_return: {
+    label: 'در انتظار تعیین تاریخ تحویل به بازرگانی',
+    icon: 'pi pi-clock',
+    bg: 'bg-red-50',
+    text: 'text-red-700',
+    border: 'border-red-100'
+  },
+  warehouse_return_scheduled: {
+    label: 'تاریخ تحویل به بازرگانی تعیین شد',
+    icon: 'pi pi-calendar',
+    bg: 'bg-orange-50',
+    text: 'text-orange-700',
+    border: 'border-orange-100'
+  },
+  commercial_received: {
+    label: 'تحویل بازرگانی شد',
+    icon: 'pi pi-check',
+    bg: 'bg-blue-50',
+    text: 'text-blue-700',
+    border: 'border-blue-100'
+  },
+  supplier_returned: {
+    label: 'برگشت به تأمین‌کننده',
+    icon: 'pi pi-undo',
+    bg: 'bg-green-50',
+    text: 'text-green-700',
+    border: 'border-green-100'
+  },
 }
 
 const statusOptions = [

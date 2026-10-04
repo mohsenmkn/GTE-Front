@@ -17,8 +17,8 @@
     <Card>
       <template #content>
         <form @submit.prevent="submitForm" class="space-y-6">
-          <!-- کالا -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- کالا -->
             <div class="md:col-span-2">
               <label class="block text-sm font-medium text-gray-700 mb-2">
                 کالا <span class="text-red-500">*</span>
@@ -32,10 +32,41 @@
                   class="w-full"
                   :class="{ 'p-invalid': errors.item_id }"
                   filter
-                  :loading="loadingItems"
               />
               <small v-if="errors.item_id" class="text-red-500">
                 {{ errors.item_id }}
+              </small>
+            </div>
+
+            <!-- ✅ کد کالا (جدید - اجباری) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                کد کالا <span class="text-red-500">*</span>
+              </label>
+              <InputText
+                  v-model="form.item_code"
+                  class="w-full"
+                  placeholder="مثلاً: SKU-12345"
+                  :class="{ 'p-invalid': errors.item_code }"
+              />
+              <small v-if="errors.item_code" class="text-red-500">
+                {{ errors.item_code }}
+              </small>
+            </div>
+
+            <!-- ✅ برند محصول (جدید - اجباری) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                برند محصول <span class="text-red-500">*</span>
+              </label>
+              <InputText
+                  v-model="form.brand"
+                  class="w-full"
+                  placeholder="مثلاً: بارز، یزدتایر"
+                  :class="{ 'p-invalid': errors.brand }"
+              />
+              <small v-if="errors.brand" class="text-red-500">
+                {{ errors.brand }}
               </small>
             </div>
 
@@ -73,7 +104,23 @@
               </small>
             </div>
 
-            <!-- ✅ واحد سازمانی هدف (اصلاح شده) -->
+            <!-- ✅ تامین‌کننده (قبلاً اختیاری بود، حالا اجباری) -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                تامین‌کننده <span class="text-red-500">*</span>
+              </label>
+              <InputText
+                  v-model="form.supplier"
+                  class="w-full"
+                  placeholder="نام شرکت یا شخص تامین‌کننده"
+                  :class="{ 'p-invalid': errors.supplier }"
+              />
+              <small v-if="errors.supplier" class="text-red-500">
+                {{ errors.supplier }}
+              </small>
+            </div>
+
+            <!-- واحد سازمانی هدف -->
             <div class="md:col-span-2">
               <label class="block text-sm font-medium text-gray-700 mb-2">
                 واحد سازمانی هدف
@@ -86,11 +133,7 @@
                   placeholder="انتخاب واحد سازمانی..."
                   class="w-full"
                   filter
-                  :loading="loadingUnits"
               />
-              <small class="text-gray-400 mt-1 block">
-                واحدها به صورت سلسله مراتبی نمایش داده می‌شوند
-              </small>
             </div>
 
             <!-- توضیحات -->
@@ -109,20 +152,10 @@
             <!-- متادیتا -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                شماره فاکتور
+                شماره درخواست راهکاران
               </label>
               <InputText
                   v-model="form.metadata.invoice_number"
-                  class="w-full"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                تأمین‌کننده
-              </label>
-              <InputText
-                  v-model="form.metadata.supplier"
                   class="w-full"
               />
             </div>
@@ -175,13 +208,15 @@ const errors = ref({})
 
 const form = ref({
   item_id: null,
+  item_code: '',        // ✅ جدید
+  brand: '',            // ✅ جدید
+  supplier: '',         // ✅ حالا اجباری
   quantity: 1,
   unit_of_measurement: 'عدد',
   target_unit_id: null,
   description: '',
   metadata: {
     invoice_number: '',
-    supplier: '',
     purchase_date: '',
   },
 })
@@ -190,45 +225,34 @@ const unitOptions = ['عدد', 'کیلوگرم', 'حلقه', 'متر', 'لیتر
 
 const orgUnits = ref([])
 
-// ✅ تابع ساخت label سلسله مراتبی
 const buildHierarchicalUnits = (units) => {
   if (!units || !Array.isArray(units)) return []
-
   return units.map(unit => {
-    // ایجاد indentation بر اساس level
     const indent = '—'.repeat(Math.max(0, unit.level - 1))
     return {
       ...unit,
-      formatted_title: indent
-          ? `${indent} ${unit.title}`
-          : unit.title,
+      formatted_title: indent ? `${indent} ${unit.title}` : unit.title,
     }
   })
 }
 
-// ✅ بارگذاری واحدهای سازمانی
 const loadOrgUnits = async () => {
   loadingUnits.value = true
   try {
     const response = await api.get('/hr/org-chart/units')
-
-    // ✅ ساختار response: { units: [...] }
     const units = response.data.units || []
     orgUnits.value = buildHierarchicalUnits(units)
   } catch (error) {
     console.error('Error loading org units:', error)
-    // در صورت خطا، لیست خالی می‌ماند
   } finally {
     loadingUnits.value = false
   }
 }
 
-// ✅ بارگذاری کالاها
 const loadItems = async () => {
   loadingItems.value = true
   try {
     await store.fetchAllItems()
-    // اگر fetchAllItems وجود نداشت، از fetchItems استفاده کن
     if (!store.items || store.items.length === 0) {
       await store.fetchItems({ all: true, per_page: 1000 })
     }

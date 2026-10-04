@@ -317,17 +317,60 @@ const openEditDialog = (item) => {
 }
 
 const submitForm = async () => {
+  // بررسی تکراری بودن در لیست فعلی
+  const isDuplicate = store.custodians.some(c =>
+      c.unit?.id === form.value.organizational_unit_id &&
+      c.user?.id === form.value.user_id &&
+      c.id !== selectedItemId.value
+  )
+
+  if (isDuplicate) {
+    toast.add({
+      severity: 'warn',
+      summary: 'تکراری',
+      detail: 'این کاربر قبلاً به عنوان متولی این واحد ثبت شده است',
+      life: 5000,
+    })
+    return
+  }
+
   submitting.value = true
   try {
     if (isEdit.value) {
       await store.updateCustodian(selectedItemId.value, form.value)
     } else {
-      await store.createCustodian(form.value)
+      const response = await store.createCustodian(form.value)
+
+      // ✅ بررسی پیام بازیابی
+      if (response?.message?.includes('بازیابی')) {
+        toast.add({
+          severity: 'success',
+          summary: 'بازیابی موفق',
+          detail: response.message,
+          life: 5000,
+        })
+      }
     }
     dialogVisible.value = false
     await loadCustodians()
   } catch (error) {
-    // handled in store
+    const errorMessage = error.response?.data?.message || 'خطا در ثبت متولی'
+
+    if (errorMessage.includes('Duplicate entry')) {
+      toast.add({
+        severity: 'warn',
+        summary: 'تکراری',
+        detail: 'این کاربر قبلاً به عنوان متولی این واحد ثبت شده است',
+        life: 5000,
+      })
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'خطا',
+        detail: errorMessage,
+        life: 5000,
+      })
+    }
   } finally {
     submitting.value = false
   }
