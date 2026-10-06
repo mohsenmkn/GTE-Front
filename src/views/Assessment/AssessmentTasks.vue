@@ -251,10 +251,7 @@ const stats = computed(() => ({
 // Lifecycle
 // ═══════════════════════════════════════════════
 onMounted(async () => {
-  await Promise.all([
-    loadAssessments(),
-    loadCycles(),
-  ])
+  await loadAssessments()
 })
 
 // ═══════════════════════════════════════════════
@@ -269,6 +266,11 @@ async function loadAssessments() {
 
     const data = await assessmentService.getAssessments(params)
     assessments.value = data.assessments || []
+    const availableCycles = new Map(cycles.value.map(cycle => [cycle.id, cycle]))
+    for (const item of assessments.value) {
+      if (item.cycle) availableCycles.set(item.cycle.id, item.cycle)
+    }
+    cycles.value = [...availableCycles.values()]
   } catch (e) {
     toast.add({
       severity: 'error',
@@ -281,14 +283,6 @@ async function loadAssessments() {
   }
 }
 
-async function loadCycles() {
-  try {
-    const data = await assessmentService.getCycles()
-    cycles.value = data.cycles || []
-  } catch (e) {
-    console.error('Load cycles error:', e)
-  }
-}
 
 const debounceSearch = debounce(() => {
   loadAssessments()

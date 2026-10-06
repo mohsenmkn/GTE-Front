@@ -337,7 +337,7 @@
 import { ref, computed, onMounted } from 'vue'
 import assessmentService from '@/services/assessmentService'
 import { useToast } from 'primevue/usetoast'
-import { useAuthStore } from '@/stores/authold.js'
+import { useAuthStore } from '@/stores/auth.js'
 
 const toast = useToast()
 const authStore = useAuthStore()

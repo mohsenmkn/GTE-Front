@@ -391,7 +391,12 @@ export const menuItems = [
             },
 
 
-            // آیتم‌های ماژول ارزیابی شایستگی
+
+        ],
+    },
+
+
+                // آیتم‌های ماژول ارزیابی شایستگی
             {
                 key: 'assessment',
                 label: 'ارزیابی شایستگی',
@@ -401,7 +406,7 @@ export const menuItems = [
                         key: 'assessment.dashboard',
                         label: 'داشبورد ارزیابی',
                         to: '/assessment',
-                        access: 'assessment.view',
+                        access: ['assessment.view', 'assessment.evaluate', 'assessment.manage'],
                     },
                     {
                         key: 'assessment.profiles',
@@ -413,7 +418,7 @@ export const menuItems = [
                         key: 'assessment.tasks',
                         label: 'ارزیابی‌های من',
                         to: '/assessment/tasks',
-                        access: 'assessment.evaluate',
+                        access: ['assessment.evaluate', 'assessment.manage'],
                     },
                     {
                         key: 'assessment.auto-assign',
@@ -425,13 +430,13 @@ export const menuItems = [
                         key: 'assessment.methods',
                         label: 'روش‌های رفع خلا',
                         to: '/assessment/methods',
-                        access: 'assessment.view',
+                        access: ['assessment.view', 'assessment.evaluate', 'assessment.manage'],
                     },
                     {
                         key: 'assessment.my-report',
                         label: 'کارنامه شایستگی من',
                         to: '/assessment/my-report',
-                        access: 'assessment.view',
+                        access: ['assessment.view', 'assessment.evaluate', 'assessment.manage'],
                     },
                     {
                         key: 'assessment.mappings',
@@ -442,9 +447,6 @@ export const menuItems = [
                     },
                 ],
             },
-        ],
-    },
-
 
     // اضافه کردن به آرایه menuItems (قبل از HR یا در جای مناسب):
     {

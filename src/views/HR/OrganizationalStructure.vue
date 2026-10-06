@@ -242,6 +242,85 @@
 
       <div class="form-grid">
         <div class="form-field full">
+          <div class="form-grid">
+            <!-- فیلد جدید: واحد سازمانی -->
+            <div class="form-field full">
+              <label>واحد سازمانی <span>*</span></label>
+              <Select
+                  v-model="form.organizational_unit_id"
+                  :options="units"
+                  optionLabel="title"
+                  optionValue="id"
+                  placeholder="یک واحد سازمانی انتخاب کنید"
+                  class="w-full"
+                  :filter="true"
+                  filterPlaceholder="جستجو در واحدها..."
+                  :showClear="true"
+                  :invalid="!form.organizational_unit_id && dialogVisible"
+              />
+              <small v-if="!form.organizational_unit_id" class="field-hint">
+                <i class="pi pi-info-circle"></i>
+                انتخاب واحد سازمانی الزامی است.
+              </small>
+            </div>
+
+            <!-- فیلد پرسنل مسئول -->
+            <div class="form-field full">
+              <label>پرسنل مسئول (اختیاری)</label>
+              <div class="user-select-wrapper">
+                <AutoComplete
+                    v-model="selectedUser"
+                    :suggestions="userSuggestions"
+                    @complete="searchUsers"
+                    optionLabel="name"
+                    placeholder="جستجو بر اساس نام، موبایل یا کد پرسنلی..."
+                    class="flex-grow-1"
+                    :loading="searchingUser"
+                    dropdown
+                    :forceSelection="false"
+                    allow-empty
+                >
+                  <template #option="slotProps">
+                    <div class="user-option-item">
+                      <div class="user-avatar-sm">{{ getInitials(slotProps.option.name) }}</div>
+                      <div class="user-info-sm">
+                        <span class="user-name-sm">{{ slotProps.option.name }}</span>
+                        <span class="user-detail-sm">
+              <i class="pi pi-mobile"></i> {{ slotProps.option.mobile }}
+              <span v-if="slotProps.option.personnel_code" class="ml-2">
+                <i class="pi pi-id-card"></i> {{ slotProps.option.personnel_code }}
+              </span>
+            </span>
+                      </div>
+                    </div>
+                  </template>
+                  <template #chip="{ value }">
+                    <div class="flex align-items-center gap-2">
+                      <div class="user-avatar-xs">{{ getInitials(value.name) }}</div>
+                      <span>{{ value.name }}</span>
+                    </div>
+                  </template>
+                  <template #empty>
+                    <div class="p-3 text-center text-gray-500">
+                      کاربری یافت نشد. برای جستجو تایپ کنید...
+                    </div>
+                  </template>
+                </AutoComplete>
+                <Button
+                    icon="pi pi-user-plus"
+                    label="جدید"
+                    severity="help"
+                    text
+                    size="small"
+                    @click="newUserDialogVisible = true"
+                    v-tooltip.bottom="'ایجاد پرسنل جدید'"
+                />
+              </div>
+            </div>
+
+
+            <!-- ... -->
+          </div>
           <label>عنوان سمت <span>*</span></label>
           <InputText v-model="form.post_title" class="w-full" placeholder="مثلاً سرپرست توسعه نرم‌افزار" />
         </div>
@@ -279,6 +358,42 @@
         <Button :label="dialogMode === 'create' ? 'ایجاد سمت' : 'ذخیره تغییرات'" icon="pi pi-check" :loading="saving" @click="savePosition" />
       </template>
     </Dialog>
+    <!-- دیالوگ ایجاد کاربر جدید -->
+    <Dialog
+        v-model:visible="newUserDialogVisible"
+        modal
+        header="ایجاد پرسنل جدید"
+        :style="{ width: '500px' }"
+        class="new-user-dialog"
+    >
+      <div class="form-grid">
+        <div class="form-field full">
+          <label>نام و نام خانوادگی <span>*</span></label>
+          <InputText v-model="newUserForm.name" class="w-full" placeholder="مثلاً علی محمدی" />
+        </div>
+        <div class="form-field">
+          <label>شماره موبایل <span>*</span></label>
+          <InputText v-model="newUserForm.mobile" class="w-full" placeholder="09123456789" dir="ltr" />
+        </div>
+        <div class="form-field">
+          <label>کد پرسنلی</label>
+          <InputText v-model="newUserForm.personnel_code" class="w-full" placeholder="اختیاری" dir="ltr" />
+        </div>
+        <div class="form-field full">
+          <label>کد ملی</label>
+          <InputText v-model="newUserForm.national_code" class="w-full" placeholder="10 رقم" dir="ltr" />
+        </div>
+        <div class="form-field full">
+          <label>رمز عبور پیش‌فرض</label>
+          <InputText v-model="newUserForm.password" class="w-full" type="text" dir="ltr" />
+          <small class="text-gray-500">کاربر می‌تواند پس از اولین ورود آن را تغییر دهد.</small>
+        </div>
+      </div>
+      <template #footer>
+        <Button label="انصراف" severity="secondary" text @click="newUserDialogVisible = false" />
+        <Button label="ایجاد و انتخاب" icon="pi pi-check" :loading="savingNewUser" @click="saveNewUser" />
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -294,6 +409,8 @@ import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Message from 'primevue/message'
+import AutoComplete from 'primevue/autocomplete'
+
 
 const nodes = ref([])
 const loading = ref(false)
@@ -375,6 +492,72 @@ const filteredNodes = computed(() => {
   return filterTree(nodes.value)
 })
 
+const selectedUser = ref(null)
+const userSuggestions = ref([])
+const searchingUser = ref(false)
+
+const newUserDialogVisible = ref(false)
+const savingNewUser = ref(false)
+const newUserForm = ref({
+  name: '',
+  mobile: '',
+  national_code: '',
+  personnel_code: '',
+  password: '123456', // رمز پیش‌فرض
+})
+
+
+// جستجوی زنده کاربران
+async function searchUsers(event) {
+  searchingUser.value = true
+  try {
+    const response = await axios.get('hr/users/search', {
+      params: { q: event.query }
+    })
+    userSuggestions.value = response.data.data ?? []
+  } catch (error) {
+    console.error('خطا در جستجوی کاربر:', error)
+    userSuggestions.value = []
+  } finally {
+    searchingUser.value = false
+  }
+}
+
+// ذخیره کاربر جدید از داخل دیالوگ
+async function saveNewUser() {
+  if (!newUserForm.value.name || !newUserForm.value.mobile) {
+    errorMessage.value = 'نام و موبایل الزامی است.'
+    return
+  }
+
+  savingNewUser.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await axios.post('hr/users', newUserForm.value)
+    const createdUser = response.data.user
+
+    // کاربر جدید را به عنوان کاربر انتخاب‌شده تنظیم کن
+    selectedUser.value = {
+      id: createdUser.id,
+      name: createdUser.name,
+      mobile: createdUser.mobile,
+      personnel_code: createdUser.personnel_code
+    }
+
+    newUserDialogVisible.value = false
+    successMessage.value = `کاربر "${createdUser.name}" با موفقیت ایجاد و انتخاب شد.`
+
+    // ریست فرم کاربر جدید
+    newUserForm.value = { name: '', mobile: '', national_code: '', personnel_code: '', password: '123456' }
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message ?? 'خطا در ایجاد کاربر.'
+  } finally {
+    savingNewUser.value = false
+  }
+}
+
+
 function expandAll() {
   const keys = {}
   function walk(items) {
@@ -412,12 +595,49 @@ async function loadTree() {
   }
 }
 
+
+
+function openEdit(node) {
+  if (node.data.type !== 'position') return
+
+  dialogMode.value = 'edit'
+  form.value = {
+    id: node.data.id,
+    organizational_unit_id: node.data.unit_id,
+    parent_id: node.data.parent_id,
+    post_title: node.data.post_title ?? '',
+    post_code: node.data.post_code ?? '',
+    job_title: node.data.job_title ?? '',
+    job_code: node.data.job_code ?? '',
+    is_custom: node.data.is_custom ?? false,
+    is_active: node.data.is_active ?? true,
+    sort_order: node.data.sort_order ?? 0,
+    description: node.data.description ?? '',
+  }
+
+  // ⭐ بارگذاری کاربر تخصیص‌یافته فعلی
+  if (node.data.employees && node.data.employees.length > 0) {
+    const emp = node.data.employees[0]
+    selectedUser.value = {
+      id: emp.user_id,
+      name: emp.name,
+      mobile: emp.mobile,
+      personnel_code: emp.personnel_code
+    }
+  } else {
+    selectedUser.value = null
+  }
+
+  dialogVisible.value = true
+}
+
 function resetForm() {
   form.value = {
     id: null, organizational_unit_id: null, parent_id: null,
     post_title: '', post_code: '', job_title: '', job_code: '',
     is_custom: true, is_active: true, sort_order: 0, description: '',
   }
+  selectedUser.value = null // ⭐ ریست کاربر انتخاب‌شده
 }
 
 function openCreate(parentNode = null) {
@@ -434,40 +654,7 @@ function openCreate(parentNode = null) {
   dialogVisible.value = true
 }
 
-function openEdit(node) {
-  if (node.data.type !== 'position') return
-  dialogMode.value = 'edit'
-  form.value = {
-    id: node.data.id, organizational_unit_id: node.data.unit_id, parent_id: node.data.parent_id,
-    post_title: node.data.post_title ?? '', post_code: node.data.post_code ?? '',
-    job_title: node.data.job_title ?? '', job_code: node.data.job_code ?? '',
-    is_custom: node.data.is_custom ?? false, is_active: node.data.is_active ?? true,
-    sort_order: node.data.sort_order ?? 0, description: '',
-  }
-  dialogVisible.value = true
-}
 
-async function savePosition() {
-  if (saving.value) return
-  errorMessage.value = ''
-  successMessage.value = ''
-  saving.value = true
-  try {
-    if (dialogMode.value === 'create') {
-      await axios.post('organizational-positions', form.value)
-      successMessage.value = 'سمت با موفقیت ایجاد شد.'
-    } else {
-      await axios.put(`hr/organizational-positions/${form.value.id}`, form.value)
-      successMessage.value = 'سمت با موفقیت ویرایش شد.'
-    }
-    dialogVisible.value = false
-    await loadTree()
-  } catch (error) {
-    errorMessage.value = error.response?.data?.message ?? 'خطا در ذخیره اطلاعات سمت.'
-  } finally {
-    saving.value = false
-  }
-}
 
 async function deletePosition(node) {
   if (node.data.type !== 'position') return
@@ -698,12 +885,197 @@ async function onNodeDrop(event) {
   await loadTree()
 }
 
+
+const units = ref([])
+
+
+async function savePosition() {
+  if (saving.value) return
+  errorMessage.value = ''
+  successMessage.value = ''
+  saving.value = true
+
+  try {
+    const payload = {
+      ...form.value,
+      user_id: selectedUser.value?.id ?? null // ⭐ ارسال user_id
+    }
+
+    if (dialogMode.value === 'create') {
+      await axios.post('hr/organizational-positions', payload)
+      successMessage.value = 'سمت با موفقیت ایجاد شد.'
+    } else {
+      await axios.put(`hr/organizational-positions/${form.value.id}`, payload)
+      successMessage.value = 'سمت با موفقیت ویرایش شد.'
+    }
+
+    dialogVisible.value = false
+    await loadTree()
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message ?? 'خطا در ذخیره اطلاعات سمت.'
+  } finally {
+    saving.value = false
+  }
+}
+
+async function loadUnits() {
+  try {
+    const response = await axios.get('hr/organizational-units')
+    units.value = response.data.data ?? []
+  } catch (error) {
+    console.error('خطا در دریافت لیست واحدها:', error)
+  }
+}
+
 onMounted(() => {
   loadTree()
+  loadUnits()
 })
 </script>
 
 <style scoped>
+
+.user-select-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+.user-select-wrapper :deep(.p-autocomplete) {
+  flex: 1;
+}
+.user-option-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+.user-avatar-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.user-avatar-xs {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e0e7ff;
+  color: #4338ca;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.user-info-sm {
+  display: flex;
+  flex-direction: column;
+}
+.user-name-sm {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+.user-detail-sm {
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2px;
+}
+.ml-2 {
+  margin-right: 0.5rem;
+}
+.flex-grow-1 {
+  flex: 1;
+}
+.user-select-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.user-option-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+
+.user-avatar-sm {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.user-avatar-xs {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e0e7ff;
+  color: #4338ca;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.user-info-sm {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name-sm {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.user-detail-sm {
+  font-size: 0.75rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2px;
+}
+
+.ml-2 {
+  margin-right: 0.5rem; /* برای RTL */
+}
+
+.flex-grow-1 {
+  flex: 1;
+}
+
+.field-hint {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+:deep(.p-select) {
+  width: 100%;
+}
 /* ================= PAGE ================= */
 .org-page {
   padding: 1.5rem;

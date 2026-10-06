@@ -481,7 +481,7 @@ const hasAccess = (item) => {
 
   return (
       !item.access ||
-      auth.can(item.access)
+      (Array.isArray(item.access) ? auth.canAny(item.access) : auth.can(item.access))
   );
 
 };

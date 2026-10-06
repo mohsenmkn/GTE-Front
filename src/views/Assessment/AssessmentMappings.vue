@@ -1,14 +1,9 @@
 <template>
   <div class="p-6">
-    <!-- ═══════════════════════════════════════════
-         Header
-    ═══════════════════════════════════════════ -->
     <div class="flex items-center justify-between mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-800">مدیریت نگاشت‌های ارزیابی</h1>
-        <p class="text-sm text-gray-500 mt-1">
-          مدیریت شناسنامه‌ها و ارزیاب‌های دستی
-        </p>
+        <p class="text-sm text-gray-500 mt-1">مدیریت شناسنامه‌ها و ارزیاب‌های دستی</p>
       </div>
       <div class="flex gap-2">
         <Select
@@ -20,38 +15,25 @@
             class="w-56"
             @change="onCycleChange"
         />
-        <Button
-            icon="pi pi-plus"
-            label="نگاشت جدید"
-            @click="showCreateDialog = true"
-        />
+        <Button icon="pi pi-plus" label="نگاشت جدید" @click="showCreateDialog = true" />
       </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════
-         TabView
-    ═══════════════════════════════════════════ -->
     <TabView>
-      <!-- ═══ تب ۱: بدون شناسنامه ═══ -->
+      <!-- تب ۱: بدون شناسنامه -->
       <TabPanel header="بدون شناسنامه">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
             <div class="text-amber-600 text-sm font-medium">پست‌های بدون شناسنامه</div>
-            <div class="text-2xl font-bold text-amber-800 mt-1">
-              {{ unmappedPositions.length }}
-            </div>
+            <div class="text-2xl font-bold text-amber-800 mt-1">{{ unmappedPositions.length }}</div>
           </div>
           <div class="bg-green-50 p-4 rounded-lg border border-green-100">
             <div class="text-green-600 text-sm font-medium">شناسنامه‌های موجود</div>
-            <div class="text-2xl font-bold text-green-800 mt-1">
-              {{ availablePosts.length }}
-            </div>
+            <div class="text-2xl font-bold text-green-800 mt-1">{{ availablePosts.length }}</div>
           </div>
           <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
             <div class="text-blue-600 text-sm font-medium">نگاشت‌های فعال</div>
-            <div class="text-2xl font-bold text-blue-800 mt-1">
-              {{ mappings.filter(m => m.is_active).length }}
-            </div>
+            <div class="text-2xl font-bold text-blue-800 mt-1">{{ mappings.filter(m => m.is_active).length }}</div>
           </div>
         </div>
         <Card>
@@ -69,13 +51,7 @@
               <Column field="count" header="تعداد پرسنل" />
               <Column header="عملیات" style="width: 150px">
                 <template #body="{ data }">
-                  <Button
-                      icon="pi pi-link"
-                      label="اتصال دستی"
-                      severity="info"
-                      size="small"
-                      @click="quickMap(data)"
-                  />
+                  <Button icon="pi pi-link" label="اتصال دستی" severity="info" size="small" @click="quickMap(data)" />
                 </template>
               </Column>
             </DataTable>
@@ -83,29 +59,22 @@
         </Card>
       </TabPanel>
 
-      <!-- ═══ تب ۲: بدون ارزیاب ═══ -->
+      <!-- تب ۲: بدون ارزیاب -->
       <TabPanel header="بدون ارزیاب">
         <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-4">
           <div class="flex items-center gap-2">
             <i class="pi pi-info-circle text-blue-600"></i>
-            <span class="text-sm text-blue-800">
-              پرسنلی که شناسنامه دارند اما ارزیاب خودکار برای آن‌ها یافت نشده است.
-              می‌توانید به صورت دستی ارزیاب تعیین کنید.
-            </span>
+            <span class="text-sm text-blue-800">پرسنلی که شناسنامه دارند اما ارزیاب خودکار برای آن‌ها یافت نشده است.</span>
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div class="bg-orange-50 p-4 rounded-lg border border-orange-100">
             <div class="text-orange-600 text-sm font-medium">بدون ارزیاب</div>
-            <div class="text-2xl font-bold text-orange-800 mt-1">
-              {{ noEvaluatorSummary.total || 0 }}
-            </div>
+            <div class="text-2xl font-bold text-orange-800 mt-1">{{ noEvaluatorSummary.total || 0 }}</div>
           </div>
           <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
             <div class="text-emerald-600 text-sm font-medium">تعیین شده</div>
-            <div class="text-2xl font-bold text-emerald-800 mt-1">
-              {{ assignedCount }}
-            </div>
+            <div class="text-2xl font-bold text-emerald-800 mt-1">{{ assignedCount }}</div>
           </div>
         </div>
         <Card>
@@ -170,7 +139,7 @@
         </Card>
       </TabPanel>
 
-      <!-- ═══ تب ۳: همه نگاشت‌ها ═══ -->
+      <!-- تب ۳: همه نگاشت‌ها -->
       <TabPanel header="همه نگاشت‌ها">
         <Card>
           <template #content>
@@ -192,24 +161,14 @@
               </Column>
               <Column header="مبدا">
                 <template #body="{ data }">
-                  <div class="text-sm">
-                    <div v-if="data.mapping_type === 'title_pattern'" class="font-medium">
-                      {{ data.post_title_pattern }}
-                    </div>
-                    <div v-else class="font-medium">
-                      {{ data.unit?.title || '—' }}
-                    </div>
-                  </div>
+                  <div v-if="data.mapping_type === 'title_pattern'" class="font-medium">{{ data.post_title_pattern }}</div>
+                  <div v-else class="font-medium">{{ data.unit?.title || '—' }}</div>
                 </template>
               </Column>
               <Column header="شناسنامه مقصد">
                 <template #body="{ data }">
-                  <div class="text-sm">
-                    <div class="font-medium text-gray-800">{{ data.assessment_post?.title }}</div>
-                    <div class="text-xs text-gray-500">
-                      {{ data.assessment_post?.grade }} - {{ data.assessment_post?.unit }}
-                    </div>
-                  </div>
+                  <div class="font-medium text-gray-800">{{ data.assessment_post?.title }}</div>
+                  <div class="text-xs text-gray-500">{{ data.assessment_post?.grade }} - {{ data.assessment_post?.unit }}</div>
                 </template>
               </Column>
               <Column field="description" header="توضیحات">
@@ -219,10 +178,7 @@
               </Column>
               <Column header="وضعیت">
                 <template #body="{ data }">
-                  <Tag
-                      :value="data.is_active ? 'فعال' : 'غیرفعال'"
-                      :severity="data.is_active ? 'success' : 'secondary'"
-                  />
+                  <Tag :value="data.is_active ? 'فعال' : 'غیرفعال'" :severity="data.is_active ? 'success' : 'secondary'" />
                 </template>
               </Column>
               <Column header="عملیات" style="width: 150px">
@@ -235,13 +191,7 @@
                         text
                         @click="toggleMapping(data)"
                     />
-                    <Button
-                        icon="pi pi-trash"
-                        severity="danger"
-                        size="small"
-                        text
-                        @click="confirmDelete(data)"
-                    />
+                    <Button icon="pi pi-trash" severity="danger" size="small" text @click="confirmDelete(data)" />
                   </div>
                 </template>
               </Column>
@@ -251,9 +201,7 @@
       </TabPanel>
     </TabView>
 
-    <!-- ═══════════════════════════════════════════
-         دیالوگ ایجاد نگاشت
-    ═══════════════════════════════════════════ -->
+    <!-- دیالوگ ایجاد نگاشت -->
     <Dialog
         v-model:visible="showCreateDialog"
         :header="editingPosition ? 'اتصال سریع' : 'نگاشت جدید'"
@@ -262,9 +210,7 @@
     >
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            نوع نگاشت <span class="text-red-500">*</span>
-          </label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">نوع نگاشت <span class="text-red-500">*</span></label>
           <Select
               v-model="form.mapping_type"
               :options="mappingTypes"
@@ -275,19 +221,11 @@
           />
         </div>
         <div v-if="form.mapping_type === 'title_pattern'">
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            الگوی عنوان پست <span class="text-red-500">*</span>
-          </label>
-          <InputText
-              v-model="form.post_title_pattern"
-              class="w-full"
-              placeholder="مثال: دامپتراک یا راننده ماشین آلات سنگین"
-          />
+          <label class="block text-sm font-medium text-gray-700 mb-1">الگوی عنوان پست <span class="text-red-500">*</span></label>
+          <InputText v-model="form.post_title_pattern" class="w-full" placeholder="مثال: %دامپتراک%" />
         </div>
         <div v-else>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            واحد سازمانی <span class="text-red-500">*</span>
-          </label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">واحد سازمانی <span class="text-red-500">*</span></label>
           <Select
               v-model="form.organizational_unit_id"
               :options="units"
@@ -297,12 +235,8 @@
               class="w-full"
           />
         </div>
-
-        <!-- ✅ بخش اصلاح شده: اضافه شدن قابلیت جستجو (filter) -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            شناسنامه شایستگی مقصد <span class="text-red-500">*</span>
-          </label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">شناسنامه شایستگی مقصد <span class="text-red-500">*</span></label>
           <Select
               v-model="form.assessment_post_id"
               :options="availablePosts"
@@ -316,40 +250,22 @@
             <template #option="slotProps">
               <div>
                 <div class="font-medium">{{ slotProps.option.title }}</div>
-                <div class="text-xs text-gray-500">
-                  {{ slotProps.option.grade }} - {{ slotProps.option.unit }}
-                </div>
+                <div class="text-xs text-gray-500">{{ slotProps.option.grade }} - {{ slotProps.option.unit }}</div>
               </div>
             </template>
           </Select>
         </div>
-
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
-            توضیحات
-          </label>
-          <Textarea
-              v-model="form.description"
-              class="w-full"
-              rows="2"
-              placeholder="اختیاری"
-          />
+          <label class="block text-sm font-medium text-gray-700 mb-1">توضیحات</label>
+          <Textarea v-model="form.description" class="w-full" rows="2" placeholder="اختیاری" />
         </div>
       </div>
       <template #footer>
-        <Button
-            label="انصراف"
-            severity="secondary"
-            @click="closeCreateDialog"
-        />
-        <Button
-            label="ذخیره"
-            icon="pi pi-check"
-            :loading="saving"
-            @click="saveMapping"
-        />
+        <Button label="انصراف" severity="secondary" @click="closeCreateDialog" />
+        <Button label="ذخیره" icon="pi pi-check" :loading="saving" @click="saveMapping" />
       </template>
     </Dialog>
+
     <Toast />
     <ConfirmDialog />
   </div>
@@ -423,12 +339,7 @@ async function loadData() {
     unmappedPositions.value = data.unmapped_positions || []
     availablePosts.value = data.available_posts || []
   } catch (e) {
-    toast.add({
-      severity: 'error',
-      summary: 'خطا',
-      detail: 'خطا در دریافت داده‌ها',
-      life: 3000,
-    })
+    toast.add({ severity: 'error', summary: 'خطا', detail: 'خطا در دریافت داده‌ها', life: 3000 })
   } finally {
     loading.value = false
   }
@@ -442,18 +353,12 @@ async function loadNoEvaluator() {
     const { data } = await api.get('/assessment/mappings/no-evaluator', {
       params: { cycle_id: selectedCycleId.value }
     })
-
     noEvaluatorPositions.value = data.positions || []
     noEvaluatorSummary.value = data.summary || { total: 0 }
     selectedEvaluators.value = {}
   } catch (e) {
     console.error('Load no evaluator error:', e)
-    toast.add({
-      severity: 'error',
-      summary: 'خطا',
-      detail: 'خطا در دریافت لیست بدون ارزیاب',
-      life: 3000,
-    })
+    toast.add({ severity: 'error', summary: 'خطا', detail: 'خطا در دریافت لیست بدون ارزیاب', life: 3000 })
   } finally {
     loadingEvaluators.value = false
   }
@@ -522,13 +427,25 @@ async function saveMapping() {
 
   saving.value = true
   try {
-    await api.post('/assessment/mappings', form.value)
-    toast.add({
-      severity: 'success',
-      summary: 'موفق',
-      detail: 'نگاشت با موفقیت ایجاد شد',
-      life: 3000,
-    })
+    const { data } = await api.post('/assessment/mappings', form.value)
+
+    // ✅ نمایش پیام مناسب بر اساس به‌روزرسانی یا ایجاد
+    if (data.updated) {
+      toast.add({
+        severity: 'success',
+        summary: 'به‌روزرسانی شد',
+        detail: 'نگاشت قبلی با موفقیت به‌روزرسانی شد',
+        life: 3000,
+      })
+    } else {
+      toast.add({
+        severity: 'success',
+        summary: 'موفق',
+        detail: 'نگاشت با موفقیت ایجاد شد',
+        life: 3000,
+      })
+    }
+
     closeCreateDialog()
     await loadData()
   } catch (e) {
@@ -545,22 +462,11 @@ async function saveMapping() {
 
 async function assignEvaluator(position) {
   if (!selectedEvaluators.value[position.user_id]) {
-    toast.add({
-      severity: 'warn',
-      summary: 'هشدار',
-      detail: 'لطفاً ارزیاب را انتخاب کنید',
-      life: 3000,
-    })
+    toast.add({ severity: 'warn', summary: 'هشدار', detail: 'لطفاً ارزیاب را انتخاب کنید', life: 3000 })
     return
   }
-
   if (!selectedCycleId.value) {
-    toast.add({
-      severity: 'warn',
-      summary: 'هشدار',
-      detail: 'لطفاً چرخه ارزیابی را انتخاب کنید',
-      life: 3000,
-    })
+    toast.add({ severity: 'warn', summary: 'هشدار', detail: 'لطفاً چرخه ارزیابی را انتخاب کنید', life: 3000 })
     return
   }
 
@@ -571,20 +477,10 @@ async function assignEvaluator(position) {
       user_id: position.user_id,
       evaluator_id: selectedEvaluators.value[position.user_id],
     })
-    toast.add({
-      severity: 'success',
-      summary: 'موفق',
-      detail: `ارزیاب برای ${position.name} تعیین شد`,
-      life: 3000,
-    })
+    toast.add({ severity: 'success', summary: 'موفق', detail: `ارزیاب برای ${position.name} تعیین شد`, life: 3000 })
     await loadNoEvaluator()
   } catch (e) {
-    toast.add({
-      severity: 'error',
-      summary: 'خطا',
-      detail: e.response?.data?.message || 'خطا در تعیین ارزیاب',
-      life: 5000,
-    })
+    toast.add({ severity: 'error', summary: 'خطا', detail: e.response?.data?.message || 'خطا در تعیین ارزیاب', life: 5000 })
   } finally {
     assigning.value[position.user_id] = false
   }
@@ -593,20 +489,10 @@ async function assignEvaluator(position) {
 async function toggleMapping(mapping) {
   try {
     await api.put(`/assessment/mappings/${mapping.id}/toggle`)
-    toast.add({
-      severity: 'success',
-      summary: 'موفق',
-      detail: mapping.is_active ? 'نگاشت غیرفعال شد' : 'نگاشت فعال شد',
-      life: 3000,
-    })
+    toast.add({ severity: 'success', summary: 'موفق', detail: mapping.is_active ? 'نگاشت غیرفعال شد' : 'نگاشت فعال شد', life: 3000 })
     await loadData()
   } catch (e) {
-    toast.add({
-      severity: 'error',
-      summary: 'خطا',
-      detail: 'خطا در تغییر وضعیت',
-      life: 3000,
-    })
+    toast.add({ severity: 'error', summary: 'خطا', detail: 'خطا در تغییر وضعیت', life: 3000 })
   }
 }
 
@@ -620,20 +506,10 @@ function confirmDelete(mapping) {
     accept: async () => {
       try {
         await api.delete(`/assessment/mappings/${mapping.id}`)
-        toast.add({
-          severity: 'success',
-          summary: 'موفق',
-          detail: 'نگاشت حذف شد',
-          life: 3000,
-        })
+        toast.add({ severity: 'success', summary: 'موفق', detail: 'نگاشت حذف شد', life: 3000 })
         await loadData()
       } catch (e) {
-        toast.add({
-          severity: 'error',
-          summary: 'خطا',
-          detail: 'خطا در حذف',
-          life: 3000,
-        })
+        toast.add({ severity: 'error', summary: 'خطا', detail: 'خطا در حذف', life: 3000 })
       }
     },
   })

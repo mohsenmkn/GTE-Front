@@ -7,7 +7,7 @@
           <i class="pi pi-sync text-indigo-500"></i>
           مدیریت همگام‌سازی
         </h1>
-        <p class="text-sm text-gray-400 mt-1">وضعیت و مدیریت sync داده‌ها از گستراب</p>
+        <p class="text-sm text-gray-400 mt-1">وضعیت و مدیریت sync داده‌ها از راهکاران</p>
       </div>
       <Button
           icon="pi pi-refresh"

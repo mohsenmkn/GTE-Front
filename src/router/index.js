@@ -541,7 +541,7 @@ const router = createRouter({
                     meta: {
                         title: 'داشبورد ارزیابی',
                         requiresAuth: true,
-                        access: 'assessment.view'
+                        permission: ['assessment.view', 'assessment.evaluate', 'assessment.manage']
                     },
                 },
                 {
@@ -551,7 +551,7 @@ const router = createRouter({
                     meta: {
                         title: 'شناسنامه‌های شایستگی',
                         requiresAuth: true,
-                        access: 'assessment.manage'
+                        permission: 'assessment.manage'
                     },
                 },
                 {
@@ -561,7 +561,7 @@ const router = createRouter({
                     meta: {
                         title: 'ویرایش شناسنامه',
                         requiresAuth: true,
-                        access: 'assessment.manage'
+                        permission: 'assessment.manage'
                     },
                 },
                 {
@@ -571,7 +571,7 @@ const router = createRouter({
                     meta: {
                         title: 'ارزیابی‌های من',
                         requiresAuth: true,
-                        access: 'assessment.evaluate'
+                        permission: ['assessment.evaluate', 'assessment.manage']
                     },
                 },
                 {
@@ -581,7 +581,7 @@ const router = createRouter({
                     meta: {
                         title: 'تخصیص خودکار',
                         requiresAuth: true,
-                        access: 'assessment.manage'
+                        permission: 'assessment.manage'
                     },
                 },
                 {
@@ -591,7 +591,7 @@ const router = createRouter({
                     meta: {
                         title: 'روش‌های رفع خلا',
                         requiresAuth: true,
-                        access: 'assessment.view'
+                        permission: ['assessment.view', 'assessment.evaluate', 'assessment.manage']
                     },
                 },
                 {
@@ -601,7 +601,7 @@ const router = createRouter({
                     meta: {
                         title: 'فرم ارزیابی',
                         requiresAuth: true,
-                        permission: 'assessment.evaluate',
+                        permission: ['assessment.evaluate', 'assessment.manage'],
                     },
                 },
                 {
@@ -611,7 +611,7 @@ const router = createRouter({
                     meta: {
                         title: 'کارنامه شایستگی من',
                         requiresAuth: true,
-                        access: 'assessment.view'
+                        permission: ['assessment.view', 'assessment.evaluate', 'assessment.manage']
                     },
                 },
                 {
@@ -625,6 +625,8 @@ const router = createRouter({
                     },
                 },
 
+                { path: '/assessment/assessments/:id/report', name: 'assessment.report', component: () => import('@/views/Assessment/AssessmentReport.vue'), meta: { requiresAuth: true, title: 'کارنامه شایستگی', permission: ['assessment.view', 'assessment.evaluate', 'assessment.manage'] } },
+
                 //Sitteng System
 
                 {
@@ -636,14 +638,6 @@ const router = createRouter({
                         requiresAuth: true,
                         permission: 'system_settings.manage_database',
                     },
-                },
-
-
-                {
-                    path: '/assessment/methods',
-                    name: 'assessment.methods',
-                    component: () => import('@/views/Assessment/AssessmentMethods.vue'),
-                    meta: { title: 'روش‌های رفع خلا', requiresAuth: true, permission: 'assessment.manage' },
                 },
 
                 {
@@ -1005,7 +999,7 @@ router.beforeEach(async (to) => {
     if (requiredPermission) {
         // اگر هنوز user لود نشده، منطقی نیست permission چک کنی
         // ولی چون بالا initAuth زدیم، معمولاً user آماده است
-        if (!auth.can(requiredPermission)) {
+        if (!(Array.isArray(requiredPermission) ? auth.canAny(requiredPermission) : auth.can(requiredPermission))) {
             return { name: 'forbidden' }
         }
     }

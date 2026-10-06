@@ -244,7 +244,7 @@
                               {{ action.title }}
                             </div>
                             <div v-if="action.method" class="text-xs text-gray-600 mt-1">
-                              روش: {{ action.method }}
+                              روش: {{ action.method?.title || '—' }}
                             </div>
                             <div v-if="action.due_date" class="text-xs text-gray-500 mt-1">
                               مهلت: {{ formatDate(action.due_date) }}
@@ -420,9 +420,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import assessmentService from '@/services/assessmentService'
+import { useAuthStore } from '@/stores/auth'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 
+const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 const confirm = useConfirm()
@@ -472,10 +474,7 @@ const gapsByCategory = computed(() => {
   return Object.values(grouped)
 })
 
-const canManage = computed(() => {
-  // بررسی ساده - در پروژه واقعی از auth store استفاده کنید
-  return true
-})
+const canManage = computed(() => auth.can('assessment.manage'))
 
 const canApprove = computed(() => {
   return assessment.value?.status === 'submitted' && canManage.value
@@ -498,7 +497,7 @@ async function loadData() {
     const [assessmentData, gapsData, methodsData] = await Promise.all([
       assessmentService.getAssessment(id),
       assessmentService.getGaps(id),
-      assessmentService.getMethods(true),
+      assessmentService.getMethods(canManage.value),
     ])
 
     assessment.value = assessmentData.assessment
