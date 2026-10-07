@@ -17,6 +17,7 @@ export const useAssessmentStore = defineStore('assessment', () => {
     const currentPostQuestions = ref(null)
     const dashboardStats = ref(null)
     const loading = ref(false)
+    const executing = ref(false)   // ← جدید: وضعیت اجرای تخصیص خودکار
     const error = ref(null)
 
     // ═══════════════════════════════════════════════
@@ -109,7 +110,7 @@ export const useAssessmentStore = defineStore('assessment', () => {
         return data.category
     }
 
-    // ══════════════════════════════════════════════
+    // ═══════════════════════════════════════════════
     // Actions: Methods
     // ═══════════════════════════════════════════════
     async function fetchMethods(all = false) {
@@ -160,6 +161,35 @@ export const useAssessmentStore = defineStore('assessment', () => {
         await fetchCycles()
         return data.cycle
     }
+
+    // ═══════════════════════════════════════════════
+    // Actions: Auto-Assign  ← جدید
+    // ═══════════════════════════════════════════════
+    // async function autoAssignPreview(cycleId) {
+    //     loading.value = true
+    //     try {
+    //         const data = await assessmentService.autoAssignPreview(cycleId)
+    //         return data
+    //     } catch (e) {
+    //         error.value = e.response?.data?.message || 'خطا در پیش‌نمایش تخصیص خودکار'
+    //         throw e
+    //     } finally {
+    //         loading.value = false
+    //     }
+    // }
+    //
+    // async function autoAssignExecute(cycleId) {
+    //     executing.value = true
+    //     try {
+    //         const data = await assessmentService.autoAssignExecute(cycleId)
+    //         return data
+    //     } catch (e) {
+    //         error.value = e.response?.data?.message || 'خطا در اجرای تخصیص خودکار'
+    //         throw e
+    //     } finally {
+    //         executing.value = false
+    //     }
+    // }
 
     // ═══════════════════════════════════════════════
     // Actions: Assessments
@@ -247,7 +277,7 @@ export const useAssessmentStore = defineStore('assessment', () => {
 
     // ═══════════════════════════════════════════════
     // Actions: Utility
-    // ══════════════════════════════════════════════
+    // ═══════════════════════════════════════════════
     function clearError() {
         error.value = null
     }
@@ -264,41 +294,64 @@ export const useAssessmentStore = defineStore('assessment', () => {
         currentPostQuestions.value = null
         dashboardStats.value = null
         loading.value = false
+        executing.value = false
         error.value = null
     }
+
+
+    // در assessmentStore.js اضافه کنید:
+    async function autoAssignPreview(cycleId) {
+        loading.value = true
+        try {
+            return await assessmentService.autoAssignPreview(cycleId)
+        } catch (e) {
+            error.value = e.response?.data?.message || 'خطا در پیش‌نمایش تخصیص'
+            throw e
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function autoAssignExecute(cycleId) {
+        executing.value = true
+        try {
+            return await assessmentService.autoAssignExecute(cycleId)
+        } catch (e) {
+            error.value = e.response?.data?.message || 'خطا در اجرای تخصیص'
+            throw e
+        } finally {
+            executing.value = false
+        }
+    }
+
+// و در return اضافه کنید:
+// autoAssignPreview, autoAssignExecute
 
     return {
         // State
         posts, categories, methods, cycles, periods,
         assessments, currentAssessment, currentPost, currentPostQuestions,
-        dashboardStats, loading, error,
-
+        dashboardStats, loading, executing, error,
         // Getters
         activeCycles, activePosts, activeMethods,
-
         // Actions: Posts
         fetchPosts, fetchPost, fetchPostQuestions,
         createPost, updatePost, deletePost,
-
         // Actions: Categories
         fetchCategories, createCategory,
-
         // Actions: Methods
         fetchMethods, createMethod, updateMethod, deleteMethod,
-
         // Actions: Cycles
         fetchCycles, createCycle,
-
+        // Actions: Auto-Assign  ← جدید
+        autoAssignPreview, autoAssignExecute,
         // Actions: Assessments
         fetchAssessments, fetchAssessment,
         submitAssessment, approveAssessment, rejectAssessment,
-
         // Actions: Dashboard
         fetchDashboardStats,
-
         // Actions: Import
         importExcel, importPreview,
-
         // Utility
         clearError, $reset,
     }
