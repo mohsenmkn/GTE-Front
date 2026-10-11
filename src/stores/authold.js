@@ -39,6 +39,31 @@ export const useAuthStore = defineStore('auth', {
                 (state.user?.permissions || []).includes(permission)
             )
         },
+
+        // ✅ متد جدید: hasRole
+        hasRole: (state) => (roleName) => {
+            const roles = state.user?.roles || []
+
+            // اگر roles آرایه‌ای از string باشد
+            if (roles.length > 0 && typeof roles[0] === 'string') {
+                return roles.includes(roleName)
+            }
+
+            // اگر roles آرایه‌ای از آبجکت با فیلد name باشد
+            return roles.some(role => role.name === roleName)
+        },
+
+        // ✅ متد جدید: hasAnyRole
+        hasAnyRole: (state) => (roleNames = []) => {
+            const roles = state.user?.roles || []
+
+            if (roles.length > 0 && typeof roles[0] === 'string') {
+                return roleNames.some(name => roles.includes(name))
+            }
+
+            return roles.some(role => roleNames.includes(role.name))
+        },
+
     },
 
     actions: {

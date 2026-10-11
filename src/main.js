@@ -55,6 +55,7 @@ import AutoComplete from 'primevue/autocomplete';
 import ToggleSwitch from 'primevue/toggleswitch';
 import AccordionTab from 'primevue/accordiontab';
 import Accordion from 'primevue/accordion';
+import InputSwitch from 'primevue/inputswitch';
 
 
 // ═══════════════════════════════════════════
@@ -134,6 +135,7 @@ app.component('AutoComplete', AutoComplete);
 app.component('ToggleSwitch', ToggleSwitch);
 app.component('AccordionTab', AccordionTab);
 app.component('Accordion', Accordion);
+app.component('InputSwitch', InputSwitch);
 
 
 // ═══════════════════════════════════════════

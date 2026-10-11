@@ -949,6 +949,113 @@ const router = createRouter({
 
                     ],
                 },
+                // ═══════════════════════════════════════════════════
+// ماژول هزینه‌های سفر رانندگان (TripExpense)
+// ═══════════════════════════════════════════════════
+                {
+                    path: '/trip-expense',
+                    name: 'trip-expense.index',
+                    component: () => import('@/views/TripExpense/trips/TripList.vue'),
+                    meta: {
+                        title: 'هزینه‌های سفر',
+                        requiresAuth: true,
+                        permission: 'trip_expense.view',
+                    },
+                },
+                {
+                    path: '/trip-expense/trips/create',
+                    name: 'trip-expense.trips.create',
+                    component: () => import('@/views/TripExpense/trips/TripForm.vue'),
+                    meta: {
+                        title: 'ثبت سفر جدید',
+                        requiresAuth: true,
+                        permission: 'trip_expense.create_trip',
+                    },
+                },
+                {
+                    path: '/trip-expense/trips/:id(\\d+)',
+                    name: 'trip-expense.trips.show',
+                    component: () => import('@/views/TripExpense/trips/TripShow.vue'),
+                    meta: {
+                        title: 'جزئیات سفر',
+                        requiresAuth: true,
+                        permission: 'trip_expense.view_trips',
+                    },
+                },
+                {
+                    path: '/trip-expense/trips/:tripId(\\d+)/expenses/create',
+                    name: 'trip-expense.expenses.create',
+                    component: () => import('@/views/TripExpense/expenses/ExpenseForm.vue'),
+                    meta: {
+                        title: 'ثبت هزینه',
+                        requiresAuth: true,
+                        permission: 'trip_expense.create_expense',
+                    },
+                },
+                {
+                    path: '/trip-expense/approval',
+                    name: 'trip-expense.approval',
+                    component: () => import('@/views/TripExpense/expenses/ExpenseApproval.vue'),
+                    meta: {
+                        title: 'تایید هزینه‌ها',
+                        requiresAuth: true,
+                        permission: 'trip_expense.approve_expense',
+                    },
+                },
+                {
+                    path: '/trip-expense/trucks',
+                    name: 'trip-expense.trucks',
+                    component: () => import('@/views/TripExpense/trucks/TruckList.vue'),
+                    meta: {
+                        title: 'مدیریت کامیون‌ها',
+                        requiresAuth: true,
+                        permission: 'trip_expense.manage_trucks',
+                    },
+                },
+                {
+                    path: '/trip-expense/categories',
+                    name: 'trip-expense.categories',
+                    component: () => import('@/views/TripExpense/categories/CategoryList.vue'),
+                    meta: {
+                        title: 'دسته‌بندی هزینه‌ها',
+                        requiresAuth: true,
+                        permission: 'trip_expense.manage_categories',
+                    },
+                },
+                {
+                    path: '/trip-expense/limits',
+                    name: 'trip-expense.limits',
+                    component: () => import('@/views/TripExpense/limits/LimitList.vue'),
+                    meta: {
+                        title: 'سقف هزینه‌ها',
+                        requiresAuth: true,
+                        permission: 'trip_expense.manage_limits',
+                    },
+                },
+                // ═══════ مدیریت اختصاص راننده به کامیون ═══════
+                {
+                    path: '/trip-expense/driver-assignments',
+                    name: 'trip-expense.assignments',
+                    component: () => import('@/views/TripExpense/assignments/DriverAssignmentList.vue'),
+                    meta: {
+                        title: 'مدیریت اختصاص راننده به کامیون',
+                        requiresAuth: true,
+                        permission: 'trip_expense.manage_assignments_trucks',
+                    },
+                },
+                // ═══════════════════════════════════════════════════
+// گزارش‌های ماژول هزینه‌های سفر
+// ═══════════════════════════════════════════════════
+                {
+                    path: '/trip-expense/reports',
+                    name: 'trip-expense.reports',
+                    component: () => import('@/views/TripExpense/reports/ReportDashboard.vue'),
+                    meta: {
+                        title: 'گزارش‌های هزینه‌های سفر',
+                        requiresAuth: true,
+                        permission: 'trip_expense.view_reports',
+                    },
+                },
 
             ],
         },

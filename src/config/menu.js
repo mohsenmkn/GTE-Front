@@ -5,7 +5,7 @@ import {
     BookOpen, Bookmark, Book, BookmarkCheck, MessageSquareWarning, PlusCircle,DollarSign,
     ShieldAlert, List, Network, FileSignature, Inbox,User,Activity, AlertTriangle, Eye, Mail, Calendar, Phone, CreditCard,
     Briefcase, Lock, Shield, Settings, Bell, Search, X, Check, Plus, Edit, Trash2,Truck,
-    Save,Filter,Download,Upload,RefreshCw,Info,HelpCircle,LogOut, ChevronDown,UsersRound,
+    Save,Filter,Download,Upload,RefreshCw,Info,HelpCircle,LogOut, ChevronDown,UsersRound,MapPin, Receipt,
     ChevronLeft, ChevronRight, ArrowLeft, ArrowRight,ClipboardCheck,ClipboardList,FileBarChart,Gauge,Database,Wrench
 } from 'lucide-vue-next'
 
@@ -613,6 +613,70 @@ export const menuItems = [
                 to: '/pre-warehouse/custodians',
                 access: 'pre_warehouse.warehouse_manage',
                 icon: UserCog,
+            },
+        ],
+    },
+
+
+    // ═══════ هزینه‌های سفر رانندگان ═══════
+    {
+        key: 'trip-expense',
+        label: 'هزینه‌های سفر',
+        icon: MapPin,
+        access: 'trip_expense.view',
+        children: [
+            {
+                key: 'trip-expense-list',
+                label: 'لیست سفرها',
+                to: '/trip-expense',
+                access: 'trip_expense.view_trips',
+                icon: List,
+            },
+            {
+                key: 'trip-expense-approval',
+                label: 'تایید هزینه‌ها',
+                to: '/trip-expense/approval',
+                access: 'trip_expense.approve_expense',
+                icon: Receipt,
+                badge: null,
+                badgeColor: 'red',
+            },
+            {
+                key: 'trip-expense-trucks',
+                label: 'مدیریت کامیون‌ها',
+                to: '/trip-expense/trucks',
+                access: 'trip_expense.manage_trucks',
+                icon: Truck,
+            },
+            {
+                key: 'trip-expense-categories',
+                label: 'دسته‌بندی هزینه‌ها',
+                to: '/trip-expense/categories',
+                access: 'trip_expense.manage_categories',
+                icon: FolderTree,
+            },
+            {
+                key: 'trip-expense-limits',
+                label: 'سقف هزینه‌ها',
+                to: '/trip-expense/limits',
+                access: 'trip_expense.manage_limits',
+                icon: Wallet,
+            },
+            // در src/config/menu.js، داخل منوی trip-expense:
+
+            {
+                key: 'trip-expense-assignments',
+                label: 'اختصاص راننده به کامیون',
+                to: '/trip-expense/driver-assignments',
+                access: 'trip_expense.manage_assignments_trucks',
+                icon: Users, // یا Link
+            },
+            {
+                key: 'trip-expense-reports',
+                label: 'گزارش‌ها و آمار',
+                to: '/trip-expense/reports',
+                access: 'trip_expense.view_reports',
+                icon: BarChart3,
             },
         ],
     },

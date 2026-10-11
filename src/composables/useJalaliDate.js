@@ -7,22 +7,32 @@ export function useJalaliDate() {
      * @param {string} format - فرمت خروجی
      * @returns {string} تاریخ شمسی
      */
-    const toJalali = (date, format = 'YYYY/MM/DD HH:mm:ss') => {
+    const toJalali = (date) => {
         if (!date) return '-'
 
         try {
             const d = new Date(date)
+
             if (isNaN(d.getTime())) return '-'
 
-            // استفاده از Intl برای تبدیل به شمسی
+            const hasTime =
+                typeof date === 'string' &&
+                /T\d{2}:\d{2}/.test(date)
+
             const options = {
+                calendar: 'persian',
+                numberingSystem: 'arab',
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                calendar: 'persian'
+                timeZone: 'Asia/Tehran'
+            }
+
+            if (hasTime) {
+                options.hour = '2-digit'
+                options.minute = '2-digit'
+                options.second = '2-digit'
+                options.hourCycle = 'h23'
             }
 
             return new Intl.DateTimeFormat('fa-IR', options).format(d)
