@@ -11,7 +11,6 @@
           <p>مدیریت سلسله‌مراتب واحدها، سمت‌ها و پرسنل سازمان</p>
         </div>
       </div>
-
       <div class="header-actions">
         <Button label="سمت جدید" icon="pi pi-plus" @click="openCreate()" />
         <Button
@@ -81,7 +80,6 @@
             <small>برای جابه‌جایی، آیتم را بکشید و روی مقصد رها کنید.</small>
           </div>
         </div>
-
         <div class="toolbar-actions">
           <span class="p-input-icon-left search-box">
             <i class="pi pi-search"></i>
@@ -99,7 +97,6 @@
           <h3>ساختاری پیدا نشد</h3>
           <p>موردی مطابق جستجوی شما وجود ندارد.</p>
         </div>
-
         <Tree
             v-model:selectionKeys="selectedNode"
             v-model:expandedKeys="expandedKeys"
@@ -112,7 +109,6 @@
             @node-drop="onNodeDrop"
         >
           <template #default="{ node }">
-
             <!-- ================= UNIT ================= -->
             <div v-if="node.data.type === 'unit'" class="unit-card">
               <div class="unit-accent"></div>
@@ -132,9 +128,22 @@
                     <span>
                       <i class="pi pi-layer-group"></i> سطح {{ node.data.level }}
                     </span>
+                    <!-- ✅ نمایش والد اگر زیر سمت باشد -->
+                    <span v-if="node.data.parent_position_id && node.data.parent_position_title" class="parent-position-badge">
+                      <i class="pi pi-briefcase"></i> زیرمجموعه: {{ node.data.parent_position_title }}
+                    </span>
                   </div>
                 </div>
                 <div class="unit-btns">
+                  <Button
+                      icon="pi pi-pencil"
+                      text
+                      rounded
+                      size="small"
+                      severity="secondary"
+                      v-tooltip.bottom="'ویرایش واحد'"
+                      @click.stop="openEditUnit(node)"
+                  />
                   <Button
                       icon="pi pi-plus"
                       text
@@ -169,7 +178,7 @@
                     سطح {{ node.data.positionLevel }}
                   </span>
                 </div>
-                <!-- بخش پرسنل - اصلاح شده -->
+                <!-- بخش پرسنل -->
                 <div v-if="node.data.employees?.length" class="pos-people">
                   <router-link
                       v-for="emp in node.data.employees"
@@ -208,7 +217,6 @@
                 />
               </div>
             </div>
-
           </template>
         </Tree>
       </div>
@@ -224,7 +232,7 @@
       </div>
     </div>
 
-    <!-- ================= DIALOG ================= -->
+    <!-- ================= DIALOG (Position) ================= -->
     <Dialog
         v-model:visible="dialogVisible"
         modal
@@ -239,88 +247,79 @@
           <small>اطلاعات سمت را وارد یا اصلاح کنید.</small>
         </div>
       </div>
-
       <div class="form-grid">
         <div class="form-field full">
-          <div class="form-grid">
-            <!-- فیلد جدید: واحد سازمانی -->
-            <div class="form-field full">
-              <label>واحد سازمانی <span>*</span></label>
-              <Select
-                  v-model="form.organizational_unit_id"
-                  :options="units"
-                  optionLabel="title"
-                  optionValue="id"
-                  placeholder="یک واحد سازمانی انتخاب کنید"
-                  class="w-full"
-                  :filter="true"
-                  filterPlaceholder="جستجو در واحدها..."
-                  :showClear="true"
-                  :invalid="!form.organizational_unit_id && dialogVisible"
-              />
-              <small v-if="!form.organizational_unit_id" class="field-hint">
-                <i class="pi pi-info-circle"></i>
-                انتخاب واحد سازمانی الزامی است.
-              </small>
-            </div>
-
-            <!-- فیلد پرسنل مسئول -->
-            <div class="form-field full">
-              <label>پرسنل مسئول (اختیاری)</label>
-              <div class="user-select-wrapper">
-                <AutoComplete
-                    v-model="selectedUser"
-                    :suggestions="userSuggestions"
-                    @complete="searchUsers"
-                    optionLabel="name"
-                    placeholder="جستجو بر اساس نام، موبایل یا کد پرسنلی..."
-                    class="flex-grow-1"
-                    :loading="searchingUser"
-                    dropdown
-                    :forceSelection="false"
-                    allow-empty
-                >
-                  <template #option="slotProps">
-                    <div class="user-option-item">
-                      <div class="user-avatar-sm">{{ getInitials(slotProps.option.name) }}</div>
-                      <div class="user-info-sm">
-                        <span class="user-name-sm">{{ slotProps.option.name }}</span>
-                        <span class="user-detail-sm">
-              <i class="pi pi-mobile"></i> {{ slotProps.option.mobile }}
-              <span v-if="slotProps.option.personnel_code" class="ml-2">
-                <i class="pi pi-id-card"></i> {{ slotProps.option.personnel_code }}
-              </span>
-            </span>
-                      </div>
-                    </div>
-                  </template>
-                  <template #chip="{ value }">
-                    <div class="flex align-items-center gap-2">
-                      <div class="user-avatar-xs">{{ getInitials(value.name) }}</div>
-                      <span>{{ value.name }}</span>
-                    </div>
-                  </template>
-                  <template #empty>
-                    <div class="p-3 text-center text-gray-500">
-                      کاربری یافت نشد. برای جستجو تایپ کنید...
-                    </div>
-                  </template>
-                </AutoComplete>
-                <Button
-                    icon="pi pi-user-plus"
-                    label="جدید"
-                    severity="help"
-                    text
-                    size="small"
-                    @click="newUserDialogVisible = true"
-                    v-tooltip.bottom="'ایجاد پرسنل جدید'"
-                />
-              </div>
-            </div>
-
-
-            <!-- ... -->
+          <label>واحد سازمانی <span>*</span></label>
+          <Select
+              v-model="form.organizational_unit_id"
+              :options="units"
+              optionLabel="title"
+              optionValue="id"
+              placeholder="یک واحد سازمانی انتخاب کنید"
+              class="w-full"
+              :filter="true"
+              filterPlaceholder="جستجو در واحدها..."
+              :showClear="true"
+              :invalid="!form.organizational_unit_id && dialogVisible"
+          />
+          <small v-if="!form.organizational_unit_id" class="field-hint">
+            <i class="pi pi-info-circle"></i>
+            انتخاب واحد سازمانی الزامی است.
+          </small>
+        </div>
+        <div class="form-field full">
+          <label>پرسنل مسئول (اختیاری)</label>
+          <div class="user-select-wrapper">
+            <AutoComplete
+                v-model="selectedUser"
+                :suggestions="userSuggestions"
+                @complete="searchUsers"
+                optionLabel="name"
+                placeholder="جستجو بر اساس نام، موبایل یا کد پرسنلی..."
+                class="flex-grow-1"
+                :loading="searchingUser"
+                dropdown
+                :forceSelection="false"
+                allow-empty
+            >
+              <template #option="slotProps">
+                <div class="user-option-item">
+                  <div class="user-avatar-sm">{{ getInitials(slotProps.option.name) }}</div>
+                  <div class="user-info-sm">
+                    <span class="user-name-sm">{{ slotProps.option.name }}</span>
+                    <span class="user-detail-sm">
+                      <i class="pi pi-mobile"></i> {{ slotProps.option.mobile }}
+                      <span v-if="slotProps.option.personnel_code" class="ml-2">
+                        <i class="pi pi-id-card"></i> {{ slotProps.option.personnel_code }}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </template>
+              <template #chip="{ value }">
+                <div class="flex align-items-center gap-2">
+                  <div class="user-avatar-xs">{{ getInitials(value.name) }}</div>
+                  <span>{{ value.name }}</span>
+                </div>
+              </template>
+              <template #empty>
+                <div class="p-3 text-center text-gray-500">
+                  کاربری یافت نشد. برای جستجو تایپ کنید...
+                </div>
+              </template>
+            </AutoComplete>
+            <Button
+                icon="pi pi-user-plus"
+                label="جدید"
+                severity="help"
+                text
+                size="small"
+                @click="newUserDialogVisible = true"
+                v-tooltip.bottom="'ایجاد پرسنل جدید'"
+            />
           </div>
+        </div>
+        <div class="form-field full">
           <label>عنوان سمت <span>*</span></label>
           <InputText v-model="form.post_title" class="w-full" placeholder="مثلاً سرپرست توسعه نرم‌افزار" />
         </div>
@@ -352,12 +351,75 @@
           <Textarea v-model="form.description" rows="4" class="w-full" placeholder="توضیحات مربوط به این سمت..." />
         </div>
       </div>
-
       <template #footer>
         <Button label="انصراف" severity="secondary" text @click="dialogVisible = false" />
         <Button :label="dialogMode === 'create' ? 'ایجاد سمت' : 'ذخیره تغییرات'" icon="pi pi-check" :loading="saving" @click="savePosition" />
       </template>
     </Dialog>
+
+    <!-- ================= DIALOG (Unit) - ✅ جدید ================= -->
+    <Dialog
+        v-model:visible="unitDialogVisible"
+        modal
+        header="ویرایش واحد سازمانی"
+        :style="{ width: '500px' }"
+        class="unit-dialog"
+    >
+      <div class="dialog-intro">
+        <div class="dialog-icon" style="background: #eff6ff; color: #2563eb;">
+          <i class="pi pi-building"></i>
+        </div>
+        <div>
+          <strong>ویرایش واحد سازمانی</strong>
+          <small>واحد را به والد جدید منتقل کنید.</small>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-field full">
+          <label>نام واحد</label>
+          <InputText :value="unitForm.title" disabled class="w-full" />
+        </div>
+        <div class="form-field full">
+          <label>والد واحد (واحد سازمانی)</label>
+          <Select
+              v-model="unitForm.parent_id"
+              :options="availableParentUnits"
+              optionLabel="title"
+              optionValue="id"
+              placeholder="واحد والد را انتخاب کنید"
+              class="w-full"
+              :filter="true"
+              filterPlaceholder="جستجو..."
+              :showClear="true"
+              @change="onUnitParentChange"
+          />
+        </div>
+        <div class="form-field full">
+          <label>یا والد سمت (سمت سازمانی)</label>
+          <Select
+              v-model="unitForm.parent_position_id"
+              :options="availableParentPositions"
+              optionLabel="label"
+              optionValue="id"
+              placeholder="سمت والد را انتخاب کنید"
+              class="w-full"
+              :filter="true"
+              filterPlaceholder="جستجو..."
+              :showClear="true"
+              @change="onUnitPositionParentChange"
+          />
+          <small class="field-hint">
+            <i class="pi pi-info-circle"></i>
+            در صورت انتخاب سمت، واحد زیرمجموعه آن سمت قرار می‌گیرد.
+          </small>
+        </div>
+      </div>
+      <template #footer>
+        <Button label="انصراف" severity="secondary" text @click="unitDialogVisible = false" />
+        <Button label="ذخیره تغییرات" icon="pi pi-check" :loading="savingUnit" @click="saveUnit" />
+      </template>
+    </Dialog>
+
     <!-- دیالوگ ایجاد کاربر جدید -->
     <Dialog
         v-model:visible="newUserDialogVisible"
@@ -410,7 +472,7 @@ import Textarea from 'primevue/textarea'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Message from 'primevue/message'
 import AutoComplete from 'primevue/autocomplete'
-
+import Select from 'primevue/select'
 
 const nodes = ref([])
 const loading = ref(false)
@@ -424,6 +486,17 @@ const saving = ref(false)
 const expandedKeys = ref({})
 
 const statistics = ref({ units: 0, positions: 0, employees: 0 })
+
+// ✅ State جدید برای دیالوگ ویرایش واحد
+const unitDialogVisible = ref(false)
+const savingUnit = ref(false)
+const unitForm = ref({
+  id: null,
+  title: '',
+  parent_id: null,
+  parent_position_id: null,
+})
+const allPositions = ref([]) // ✅ لیست همه سمت‌ها
 
 function getInitials(name) {
   if (!name) return '؟'
@@ -448,23 +521,19 @@ function calculateStatistics(tree) {
   statistics.value = { units, positions, employees }
 }
 
-// محاسبه سطح هر سمت در سلسله‌مراتب
-function assignPositionLevels(tree) {
-  function walk(nodes, parentUnitLevel = 0, positionDepth = 0) {
-    for (const node of nodes || []) {
-      if (node.data.type === 'unit') {
-        node.data.positionLevel = 0 // واحد، سمت نیست
-        walk(node.children, node.data.level || 0, 0)
-      } else if (node.data.type === 'position') {
-        node.data.positionLevel = parentUnitLevel + positionDepth + 1
-        walk(node.children, parentUnitLevel, positionDepth + 1)
-      }
+// ✅ اصلاح شده: محاسبه سطح هر سمت در سلسله‌مراتب (پشتیبانی از واحدهای زیر سمت)
+function assignPositionLevels(tree, parentUnitLevel = 0, positionDepth = 0) {
+  for (const node of tree || []) {
+    if (node.data.type === 'unit') {
+      node.data.positionLevel = 0
+      assignPositionLevels(node.children, node.data.level || 0, 0)
+    } else if (node.data.type === 'position') {
+      node.data.positionLevel = parentUnitLevel + positionDepth + 1
+      assignPositionLevels(node.children, parentUnitLevel, positionDepth + 1)
     }
   }
-  walk(tree)
 }
 
-// تبدیل سطح به کلاس رنگ (چرخشی برای سطوح > 4)
 function getPositionLevelClass(level) {
   if (!level || level < 1) return 1
   return ((level - 1) % 4) + 1
@@ -503,11 +572,9 @@ const newUserForm = ref({
   mobile: '',
   national_code: '',
   personnel_code: '',
-  password: '123456', // رمز پیش‌فرض
+  password: '123456',
 })
 
-
-// جستجوی زنده کاربران
 async function searchUsers(event) {
   searchingUser.value = true
   try {
@@ -523,7 +590,6 @@ async function searchUsers(event) {
   }
 }
 
-// ذخیره کاربر جدید از داخل دیالوگ
 async function saveNewUser() {
   if (!newUserForm.value.name || !newUserForm.value.mobile) {
     errorMessage.value = 'نام و موبایل الزامی است.'
@@ -537,7 +603,6 @@ async function saveNewUser() {
     const response = await axios.post('hr/users', newUserForm.value)
     const createdUser = response.data.user
 
-    // کاربر جدید را به عنوان کاربر انتخاب‌شده تنظیم کن
     selectedUser.value = {
       id: createdUser.id,
       name: createdUser.name,
@@ -548,7 +613,6 @@ async function saveNewUser() {
     newUserDialogVisible.value = false
     successMessage.value = `کاربر "${createdUser.name}" با موفقیت ایجاد و انتخاب شد.`
 
-    // ریست فرم کاربر جدید
     newUserForm.value = { name: '', mobile: '', national_code: '', personnel_code: '', password: '123456' }
   } catch (error) {
     errorMessage.value = error.response?.data?.message ?? 'خطا در ایجاد کاربر.'
@@ -556,7 +620,6 @@ async function saveNewUser() {
     savingNewUser.value = false
   }
 }
-
 
 function expandAll() {
   const keys = {}
@@ -586,7 +649,7 @@ async function loadTree() {
   try {
     const response = await axios.get('hr/organizational-positions/tree')
     nodes.value = response.data.data ?? []
-    assignPositionLevels(nodes.value) // محاسبه سطوح
+    assignPositionLevels(nodes.value)
     calculateStatistics(nodes.value)
   } catch (error) {
     errorMessage.value = error.response?.data?.message ?? 'خطا در دریافت ساختار سازمانی.'
@@ -594,8 +657,6 @@ async function loadTree() {
     loading.value = false
   }
 }
-
-
 
 function openEdit(node) {
   if (node.data.type !== 'position') return
@@ -615,7 +676,6 @@ function openEdit(node) {
     description: node.data.description ?? '',
   }
 
-  // ⭐ بارگذاری کاربر تخصیص‌یافته فعلی
   if (node.data.employees && node.data.employees.length > 0) {
     const emp = node.data.employees[0]
     selectedUser.value = {
@@ -631,13 +691,27 @@ function openEdit(node) {
   dialogVisible.value = true
 }
 
+// ✅ متد جدید: باز کردن دیالوگ ویرایش واحد
+function openEditUnit(node) {
+  if (node.data.type !== 'unit') return
+
+  unitForm.value = {
+    id: node.data.id,
+    title: node.data.title,
+    parent_id: node.data.parent_id,
+    parent_position_id: node.data.parent_position_id,
+  }
+
+  unitDialogVisible.value = true
+}
+
 function resetForm() {
   form.value = {
     id: null, organizational_unit_id: null, parent_id: null,
     post_title: '', post_code: '', job_title: '', job_code: '',
     is_custom: true, is_active: true, sort_order: 0, description: '',
   }
-  selectedUser.value = null // ⭐ ریست کاربر انتخاب‌شده
+  selectedUser.value = null
 }
 
 function openCreate(parentNode = null) {
@@ -654,8 +728,6 @@ function openCreate(parentNode = null) {
   dialogVisible.value = true
 }
 
-
-
 async function deletePosition(node) {
   if (node.data.type !== 'position') return
   const confirmed = window.confirm(`آیا از حذف سمت «${node.data.post_title}» اطمینان دارید؟`)
@@ -669,6 +741,7 @@ async function deletePosition(node) {
   }
 }
 
+// ✅ اصلاح شده: مدیریت Drop با پشتیبانی از parent_position_id
 async function onNodeDrop(event) {
   const dragNode = event.dragNode
   const dropNode = event.dropNode
@@ -684,68 +757,90 @@ async function onNodeDrop(event) {
    * UNIT DRAG & DROP
    * =========================================================
    */
-
   if (dragNode.data.type === 'unit') {
-
-    if (dropNode.data.type !== 'unit') {
-      await loadTree()
-      return
-    }
-
-    // جلوگیری از قرار دادن واحد زیر خودش
+    // جلوگیری از drop روی خودش
     if (dragNode.data.id === dropNode.data.id) {
-      errorMessage.value =
-          'یک واحد نمی‌تواند زیرمجموعه خودش قرار بگیرد.'
-
+      errorMessage.value = 'یک واحد نمی‌تواند زیرمجموعه خودش قرار بگیرد.'
       await loadTree()
       return
     }
 
-    let parentId = null
+    /*
+     * حالت ۱: واحد → واحد
+     */
+    if (dropNode.data.type === 'unit') {
+      let parentId = null
 
-    if (dropPosition === 0) {
-      // داخل واحد مقصد
-      parentId = dropNode.data.id
-    } else {
-      // قبل / بعد از واحد مقصد
-      parentId = dropNode.data.parent_id ?? null
+      if (dropPosition === 0) {
+        // داخل واحد مقصد
+        parentId = dropNode.data.id
+      } else {
+        // قبل / بعد از واحد مقصد
+        parentId = dropNode.data.parent_id ?? null
+      }
+
+      try {
+        await axios.post(
+            `hr/organizational-units/${dragNode.data.id}/move`,
+            {
+              parent_id: parentId,
+              parent_position_id: null, // ✅ صریحاً null
+              sort_order: null,
+            }
+        )
+        successMessage.value = 'واحد سازمانی با موفقیت جابه‌جا شد.'
+        await loadTree()
+      } catch (error) {
+        errorMessage.value =
+            error.response?.data?.message ??
+            'امکان جابه‌جایی واحد سازمانی وجود ندارد.'
+        await loadTree()
+      }
+      return
     }
 
-    try {
-      await axios.post(
-          `hr/organizational-units/${dragNode.data.id}/move`,
-          {
-            parent_id: parentId,
-            sort_order: null,
-          }
-      )
+    /*
+     * ✅ حالت ۲: واحد → سمت (جدید!)
+     * واحد زیر سمت قرار می‌گیرد
+     */
+    if (dropNode.data.type === 'position') {
+      // فقط داخل سمت (dropPosition === 0) مجاز است
+      if (dropPosition !== 0) {
+        errorMessage.value = 'واحد فقط می‌تواند داخل سمت قرار بگیرد.'
+        await loadTree()
+        return
+      }
 
-      successMessage.value =
-          'واحد سازمانی با موفقیت جابه‌جا شد.'
-
-      await loadTree()
-
-    } catch (error) {
-
-      errorMessage.value =
-          error.response?.data?.message ??
-          'امکان جابه‌جایی واحد سازمانی وجود ندارد.'
-
-      await loadTree()
+      try {
+        await axios.post(
+            `hr/organizational-units/${dragNode.data.id}/move`,
+            {
+              parent_id: null,
+              parent_position_id: dropNode.data.id, // ✅ ارسال parent_position_id
+              sort_order: null,
+            }
+        )
+        successMessage.value = 'واحد سازمانی با موفقیت زیر سمت قرار گرفت.'
+        await loadTree()
+      } catch (error) {
+        errorMessage.value =
+            error.response?.data?.message ??
+            'امکان جابه‌جایی واحد سازمانی وجود ندارد.'
+        await loadTree()
+      }
+      return
     }
 
+    await loadTree()
     return
   }
-
 
   /*
    * =========================================================
    * POSITION DRAG & DROP
    * =========================================================
    */
-
   if (dragNode.data.type === 'position') {
-
     if (
         dropNode.data.type !== 'position' &&
         dropNode.data.type !== 'unit'
@@ -758,103 +853,41 @@ async function onNodeDrop(event) {
     let organizationalUnitId = null
     let sortOrder = null
 
-
     /*
-     * =====================================================
      * 1. POSITION → POSITION
-     * =====================================================
      */
-
     if (dropNode.data.type === 'position') {
-
-      /*
-       * واحد مقصد
-       *
-       * چون tree فقط سمت‌های یک واحد را
-       * در یک درخت قرار می‌دهد.
-       */
       organizationalUnitId = dropNode.data.unit_id
 
-
-      /*
-       * Drop داخل سمت
-       */
       if (dropPosition === 0) {
-
         parentId = dropNode.data.id
         sortOrder = 0
-
-      }
-
-      /*
-       * Drop قبل / بعد
-       */
-      else {
-
-        parentId =
-            dropNode.data.parent_id ?? null
-
+      } else {
+        parentId = dropNode.data.parent_id ?? null
         if (dropPosition < 0) {
-
-          sortOrder = Math.max(
-              0,
-              (dropNode.data.sort_order ?? 0) - 1
-          )
-
+          sortOrder = Math.max(0, (dropNode.data.sort_order ?? 0) - 1)
         } else {
-
-          sortOrder =
-              (dropNode.data.sort_order ?? 0) + 1
+          sortOrder = (dropNode.data.sort_order ?? 0) + 1
         }
       }
     }
-
-
     /*
-     * =====================================================
      * 2. POSITION → UNIT
-     * =====================================================
      */
-
     else if (dropNode.data.type === 'unit') {
-
-      /*
-       * انتقال مستقیم به واحد
-       */
       organizationalUnitId = dropNode.data.id
-
       parentId = null
-
       sortOrder = 0
     }
 
-
-    /*
-     * =====================================================
-     * جلوگیری از Drop روی خودش
-     * =====================================================
-     */
-
-    if (
-        parentId !== null &&
-        parentId === dragNode.data.id
-    ) {
-      errorMessage.value =
-          'یک سمت نمی‌تواند زیرمجموعه خودش قرار بگیرد.'
-
+    // جلوگیری از Drop روی خودش
+    if (parentId !== null && parentId === dragNode.data.id) {
+      errorMessage.value = 'یک سمت نمی‌تواند زیرمجموعه خودش قرار بگیرد.'
       await loadTree()
       return
     }
 
-
-    /*
-     * =====================================================
-     * ارسال درخواست
-     * =====================================================
-     */
-
     try {
-
       await axios.post(
           `hr/organizational-positions/${dragNode.data.id}/move`,
           {
@@ -863,31 +896,75 @@ async function onNodeDrop(event) {
             sort_order: sortOrder,
           }
       )
-
-      successMessage.value =
-          'سمت با موفقیت جابه‌جا شد.'
-
+      successMessage.value = 'سمت با موفقیت جابه‌جا شد.'
       await loadTree()
-
     } catch (error) {
-
       errorMessage.value =
           error.response?.data?.message ??
           'امکان جابه‌جایی سمت وجود ندارد.'
-
       await loadTree()
     }
-
     return
   }
-
 
   await loadTree()
 }
 
-
 const units = ref([])
 
+// ✅ لیست واحدهای والد (برای دیالوگ ویرایش واحد)
+const availableParentUnits = computed(() => {
+  return units.value.filter(u => u.id !== unitForm.value.id)
+})
+
+// ✅ لیست سمت‌های والد (برای دیالوگ ویرایش واحد)
+const availableParentPositions = computed(() => {
+  return allPositions.value.map(p => ({
+    id: p.id,
+    label: `${p.post_title} (${p.unit_title || ''})`,
+  }))
+})
+
+// ✅ وقتی parent_id تغییر کرد، parent_position_id را null کن
+function onUnitParentChange() {
+  if (unitForm.value.parent_id) {
+    unitForm.value.parent_position_id = null
+  }
+}
+
+// ✅ وقتی parent_position_id تغییر کرد، parent_id را null کن
+function onUnitPositionParentChange() {
+  if (unitForm.value.parent_position_id) {
+    unitForm.value.parent_id = null
+  }
+}
+
+// ✅ ذخیره تغییرات واحد
+async function saveUnit() {
+  if (savingUnit.value) return
+  errorMessage.value = ''
+  successMessage.value = ''
+  savingUnit.value = true
+
+  try {
+    await axios.post(
+        `hr/organizational-units/${unitForm.value.id}/move`,
+        {
+          parent_id: unitForm.value.parent_id,
+          parent_position_id: unitForm.value.parent_position_id,
+          sort_order: null,
+        }
+    )
+
+    successMessage.value = 'واحد سازمانی با موفقیت ویرایش شد.'
+    unitDialogVisible.value = false
+    await loadTree()
+  } catch (error) {
+    errorMessage.value = error.response?.data?.message ?? 'خطا در ویرایش واحد سازمانی.'
+  } finally {
+    savingUnit.value = false
+  }
+}
 
 async function savePosition() {
   if (saving.value) return
@@ -898,7 +975,7 @@ async function savePosition() {
   try {
     const payload = {
       ...form.value,
-      user_id: selectedUser.value?.id ?? null // ⭐ ارسال user_id
+      user_id: selectedUser.value?.id ?? null
     }
 
     if (dialogMode.value === 'create') {
@@ -927,13 +1004,43 @@ async function loadUnits() {
   }
 }
 
+// ✅ بارگذاری لیست سمت‌ها برای دیالوگ ویرایش واحد
+async function loadAllPositions() {
+  try {
+    const response = await axios.get('hr/organizational-positions')
+    allPositions.value = response.data.data ?? []
+  } catch (error) {
+    console.error('خطا در دریافت لیست سمت‌ها:', error)
+  }
+}
+
 onMounted(() => {
   loadTree()
   loadUnits()
+  loadAllPositions() // ✅ بارگذاری سمت‌ها
 })
 </script>
 
 <style scoped>
+/* ... تمام استایل‌های قبلی حفظ می‌شوند ... */
+
+/* ✅ استایل‌های جدید */
+.parent-position-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.5rem;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.parent-position-badge i {
+  font-size: 0.65rem;
+}
 
 .user-select-wrapper {
   display: flex;
@@ -997,74 +1104,6 @@ onMounted(() => {
 .flex-grow-1 {
   flex: 1;
 }
-.user-select-wrapper {
-  display: flex;
-  gap: 0.5rem;
-  align-items: flex-start;
-}
-
-.user-option-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.25rem 0;
-}
-
-.user-avatar-sm {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #7c3aed, #6d28d9);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.user-avatar-xs {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: #e0e7ff;
-  color: #4338ca;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-}
-
-.user-info-sm {
-  display: flex;
-  flex-direction: column;
-}
-
-.user-name-sm {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #1e293b;
-}
-
-.user-detail-sm {
-  font-size: 0.75rem;
-  color: #64748b;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 2px;
-}
-
-.ml-2 {
-  margin-right: 0.5rem; /* برای RTL */
-}
-
-.flex-grow-1 {
-  flex: 1;
-}
-
 .field-hint {
   color: #94a3b8;
   font-size: 0.75rem;
@@ -1072,7 +1111,6 @@ onMounted(() => {
   align-items: center;
   gap: 0.3rem;
 }
-
 :deep(.p-select) {
   width: 100%;
 }
@@ -1083,7 +1121,6 @@ onMounted(() => {
   background: #f1f5f9;
   direction: rtl;
 }
-
 /* ================= HEADER ================= */
 .page-header {
   display: flex;
@@ -1104,7 +1141,6 @@ onMounted(() => {
 .header-info h1 { margin: 0; font-size: 1.4rem; font-weight: 800; color: #1e293b; }
 .header-info p { margin: 0.3rem 0 0; color: #64748b; font-size: 0.88rem; }
 .header-actions { display: flex; align-items: center; gap: 0.5rem; }
-
 /* ================= STATS ================= */
 .stats-grid {
   display: grid;
@@ -1137,7 +1173,6 @@ onMounted(() => {
 .stat-card span { display: block; color: #64748b; font-size: 0.78rem; }
 .stat-card strong { display: block; margin-top: 0.15rem; font-size: 1.3rem; color: #1e293b; }
 .status-text { color: #059669 !important; font-size: 0.95rem !important; }
-
 /* ================= TREE CARD ================= */
 .tree-card {
   background: #fff;
@@ -1163,7 +1198,6 @@ onMounted(() => {
 .toolbar-title small { display: block; margin-top: 0.2rem; color: #94a3b8; font-size: 0.75rem; }
 .toolbar-actions { display: flex; align-items: center; gap: 0.5rem; }
 .search-box input { width: 240px; border-radius: 10px; padding-right: 2.3rem; }
-
 /* ================= TREE CONTAINER ================= */
 .tree-container {
   min-height: 420px;
@@ -1172,21 +1206,17 @@ onMounted(() => {
   overflow: auto;
   background: #fafbfd;
 }
-
 .org-tree {
   border: none !important;
   background: transparent !important;
   min-width: max-content;
 }
-
-/* ---- PrimeVue overrides ---- */
 :deep(.p-tree-node-content) {
   background: transparent !important;
   border: none !important;
   padding: 0.35rem 0 !important;
   border-radius: 0 !important;
 }
-
 :deep(.p-tree-node-toggle-button) {
   width: 28px !important;
   height: 28px !important;
@@ -1198,7 +1228,6 @@ onMounted(() => {
   background: #e2e8f0 !important;
   color: #1e293b !important;
 }
-
 :deep(.p-tree-node-children) {
   padding: 0 !important;
   margin: 0 !important;
@@ -1207,7 +1236,6 @@ onMounted(() => {
   margin-right: 0.85rem !important;
   margin-top: 0.25rem !important;
 }
-
 /* ================= UNIT CARD ================= */
 .unit-card {
   position: relative;
@@ -1225,7 +1253,6 @@ onMounted(() => {
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.15);
   transform: translateY(-1px);
 }
-
 .unit-accent {
   position: absolute;
   right: 0;
@@ -1235,7 +1262,6 @@ onMounted(() => {
   background: linear-gradient(180deg, #2563eb, #3b82f6);
   border-radius: 0 14px 14px 0;
 }
-
 .unit-body {
   display: flex;
   align-items: center;
@@ -1243,7 +1269,6 @@ onMounted(() => {
   padding: 0.9rem 1rem 0.9rem 0.75rem;
   gap: 0.75rem;
 }
-
 .unit-drag {
   display: flex;
   align-items: center;
@@ -1256,7 +1281,6 @@ onMounted(() => {
 }
 .unit-drag:hover { color: #2563eb; }
 .unit-drag:active { cursor: grabbing; }
-
 .unit-avatar {
   flex-shrink: 0;
   width: 46px;
@@ -1270,12 +1294,10 @@ onMounted(() => {
   font-size: 1.25rem;
   box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);
 }
-
 .unit-info {
   flex: 1;
   min-width: 0;
 }
-
 .unit-name {
   display: block;
   font-size: 1.05rem;
@@ -1286,7 +1308,6 @@ onMounted(() => {
   text-overflow: ellipsis;
   line-height: 1.3;
 }
-
 .unit-details {
   display: flex;
   align-items: center;
@@ -1294,6 +1315,7 @@ onMounted(() => {
   margin-top: 0.25rem;
   color: #64748b;
   font-size: 0.75rem;
+  flex-wrap: wrap;
 }
 .unit-details span {
   display: inline-flex;
@@ -1301,16 +1323,16 @@ onMounted(() => {
   gap: 0.25rem;
 }
 .unit-details i { font-size: 0.68rem; }
-
 .unit-btns {
   display: flex;
   align-items: center;
+  gap: 0.15rem;
   opacity: 0;
   transition: opacity 0.2s;
+  flex-shrink: 0;
 }
 .unit-card:hover .unit-btns { opacity: 1; }
-
-/* ================= POSITION CARD - LEVEL COLORS ================= */
+/* ================= POSITION CARD ================= */
 .position-card {
   display: flex;
   align-items: flex-start;
@@ -1325,8 +1347,6 @@ onMounted(() => {
   position: relative;
   overflow: hidden;
 }
-
-/* Level 1 - آبی (معاونت‌ها) */
 .pos-level-1 {
   border-color: #bfdbfe;
   background: linear-gradient(135deg, #eff6ff 0%, #fff 100%);
@@ -1343,8 +1363,6 @@ onMounted(() => {
   background: #dbeafe;
   color: #1e40af;
 }
-
-/* Level 2 - سبز */
 .pos-level-2 {
   border-color: #a7f3d0;
   background: linear-gradient(135deg, #ecfdf5 0%, #fff 100%);
@@ -1361,8 +1379,6 @@ onMounted(() => {
   background: #d1fae5;
   color: #065f46;
 }
-
-/* Level 3 - بنفش */
 .pos-level-3 {
   border-color: #ddd6fe;
   background: linear-gradient(135deg, #f5f3ff 0%, #fff 100%);
@@ -1379,8 +1395,6 @@ onMounted(() => {
   background: #ede9fe;
   color: #5b21b6;
 }
-
-/* Level 4 - نارنجی/آمبر (به جای زرد) */
 .pos-level-4 {
   border-color: #fed7aa;
   background: linear-gradient(135deg, #fff7ed 0%, #fff 100%);
@@ -1397,11 +1411,9 @@ onMounted(() => {
   background: #fef3c7;
   color: #92400e;
 }
-
 .position-card:hover {
   transform: translateY(-1px);
 }
-
 .pos-drag {
   display: flex;
   align-items: center;
@@ -1415,7 +1427,6 @@ onMounted(() => {
 }
 .pos-drag:hover { color: #64748b; }
 .pos-drag:active { cursor: grabbing; }
-
 .pos-dot {
   flex-shrink: 0;
   width: 10px;
@@ -1424,12 +1435,10 @@ onMounted(() => {
   margin-top: 0.55rem;
   transition: all 0.2s;
 }
-
 .pos-info {
   flex: 1;
   min-width: 0;
 }
-
 .pos-name {
   display: block;
   font-size: 0.92rem;
@@ -1440,7 +1449,6 @@ onMounted(() => {
   text-overflow: ellipsis;
   line-height: 1.35;
 }
-
 .pos-details {
   display: flex;
   align-items: center;
@@ -1456,7 +1464,6 @@ onMounted(() => {
   gap: 0.2rem;
 }
 .pos-details i { font-size: 0.65rem; }
-
 .pos-level-badge {
   padding: 0.15rem 0.5rem;
   border-radius: 6px;
@@ -1464,8 +1471,6 @@ onMounted(() => {
   font-weight: 600;
   transition: all 0.2s;
 }
-
-/* People */
 .pos-people {
   display: flex;
   flex-wrap: wrap;
@@ -1482,9 +1487,24 @@ onMounted(() => {
   border-radius: 999px;
   font-size: 0.7rem;
   color: #475569;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  cursor: pointer;
 }
-.person-tag:hover { background: #f1f5f9; }
+.person-tag:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1e40af;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+.person-tag:hover .person-avatar {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+.person-tag:hover .person-link-icon {
+  opacity: 1;
+  color: #2563eb;
+}
 .person-avatar {
   width: 20px;
   height: 20px;
@@ -1496,8 +1516,8 @@ onMounted(() => {
   color: #fff;
   font-size: 0.55rem;
   font-weight: 700;
+  transition: background 0.2s ease;
 }
-
 .pos-empty {
   display: inline-flex;
   align-items: center;
@@ -1506,7 +1526,6 @@ onMounted(() => {
   color: #cbd5e1;
   font-size: 0.72rem;
 }
-
 .pos-btns {
   display: flex;
   align-items: center;
@@ -1517,7 +1536,12 @@ onMounted(() => {
   padding-top: 0.15rem;
 }
 .position-card:hover .pos-btns { opacity: 1; }
-
+.person-link-icon {
+  font-size: 0.6rem;
+  opacity: 0;
+  transition: all 0.2s ease;
+  margin-right: 0.1rem;
+}
 /* ================= FOOTER ================= */
 .tree-footer {
   display: flex;
@@ -1532,7 +1556,6 @@ onMounted(() => {
 .tree-footer > div:first-child { display: flex; align-items: center; gap: 0.4rem; }
 .tree-footer i { color: #2563eb; }
 .sep { margin: 0 0.4rem; }
-
 /* ================= EMPTY STATE ================= */
 .empty-state {
   min-height: 360px;
@@ -1549,7 +1572,6 @@ onMounted(() => {
 }
 .empty-state h3 { margin: 1rem 0 0.3rem; color: #475569; }
 .empty-state p { margin: 0; font-size: 0.88rem; }
-
 /* ================= DIALOG ================= */
 .dialog-intro {
   display: flex;
@@ -1573,7 +1595,6 @@ onMounted(() => {
 .form-field label span { color: #ef4444; }
 .status-field { justify-content: center; }
 .status-control { display: flex; align-items: center; gap: 0.6rem; min-height: 42px; }
-
 /* ================= RESPONSIVE ================= */
 @media (max-width: 1100px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1593,69 +1614,7 @@ onMounted(() => {
   .unit-btns, .pos-btns { opacity: 1; }
   .unit-card, .position-card { min-width: 260px; }
 }
-
 /* ================= ANIMATION ================= */
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
-
-
-/* ================= PERSON LINK STYLES ================= */
-.person-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.55rem 0.2rem 0.3rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 999px;
-  font-size: 0.7rem;
-  color: #475569;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.person-tag:hover {
-  background: #eff6ff;
-  border-color: #93c5fd;
-  color: #1e40af;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
-}
-
-.person-tag:hover .person-avatar {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-}
-
-.person-tag:hover .person-link-icon {
-  opacity: 1;
-  color: #2563eb;
-}
-
-.person-name {
-  transition: color 0.2s;
-}
-
-.person-link-icon {
-  font-size: 0.6rem;
-  opacity: 0;
-  transition: all 0.2s ease;
-  margin-right: 0.1rem;
-}
-
-.person-avatar {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #7c3aed, #6d28d9);
-  color: #fff;
-  font-size: 0.55rem;
-  font-weight: 700;
-  transition: background 0.2s ease;
-}
-
-
 </style>
