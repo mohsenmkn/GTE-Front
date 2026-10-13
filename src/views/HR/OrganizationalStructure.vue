@@ -699,42 +699,140 @@
     </Dialog>
 
     <!-- ═════════════════════════════════════════════
-          NEW USER DIALOG
+          NEW USER DIALOG (با Validation کامل)
     ═════════════════════════════════════════════ -->
     <Dialog
         v-model:visible="newUserDialogVisible"
         modal
         header="ایجاد پرسنل جدید"
-        :style="{ width: '500px' }"
+        :style="{ width: '560px' }"
         class="new-user-dialog"
+        @hide="resetNewUserForm"
     >
+      <!-- Error Banner (خطاهای کلی) -->
+      <div v-if="newUserErrors.general" class="form-error-banner">
+        <i class="pi pi-exclamation-circle"></i>
+        <span>{{ newUserErrors.general }}</span>
+        <button class="error-close" @click="newUserErrors.general = ''">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <div class="dialog-intro">
+        <div class="dialog-icon" style="background: #f5f3ff; color: #7c3aed;">
+          <i class="pi pi-user-plus"></i>
+        </div>
+        <div>
+          <strong>افزودن پرسنل جدید</strong>
+          <small>اطلاعات پرسنل را وارد کنید. فیلدهای ستاره‌دار اجباری هستند.</small>
+        </div>
+      </div>
+
       <div class="form-grid">
+        <!-- نام و نام خانوادگی -->
         <div class="form-field full">
           <label>نام و نام خانوادگی <span>*</span></label>
-          <InputText v-model="newUserForm.name" class="w-full" placeholder="مثلاً علی محمدی" />
+          <InputText
+              v-model="newUserForm.name"
+              class="w-full"
+              :class="{ 'p-invalid': newUserErrors.name }"
+              placeholder="مثلاً علی محمدی"
+              @input="clearFieldError('name')"
+          />
+          <small v-if="newUserErrors.name" class="field-error">
+            <i class="pi pi-exclamation-circle"></i>
+            {{ newUserErrors.name }}
+          </small>
         </div>
+
+        <!-- شماره موبایل -->
         <div class="form-field">
           <label>شماره موبایل <span>*</span></label>
-          <InputText v-model="newUserForm.mobile" class="w-full" placeholder="09123456789" dir="ltr" />
+          <InputText
+              v-model="newUserForm.mobile"
+              class="w-full"
+              :class="{ 'p-invalid': newUserErrors.mobile }"
+              placeholder="09123456789"
+              dir="ltr"
+              maxlength="11"
+              @input="clearFieldError('mobile')"
+          />
+          <small v-if="newUserErrors.mobile" class="field-error">
+            <i class="pi pi-exclamation-circle"></i>
+            {{ newUserErrors.mobile }}
+          </small>
         </div>
+
+        <!-- کد پرسنلی -->
         <div class="form-field">
-          <label>کد پرسنلی</label>
-          <InputText v-model="newUserForm.personnel_code" class="w-full" placeholder="اختیاری" dir="ltr" />
+          <label>کد پرسنلی <span>*</span></label>
+          <InputText
+              v-model="newUserForm.personnel_code"
+              class="w-full"
+              :class="{ 'p-invalid': newUserErrors.personnel_code }"
+              placeholder="مثلاً 1001"
+              dir="ltr"
+              @input="clearFieldError('personnel_code')"
+          />
+          <small v-if="newUserErrors.personnel_code" class="field-error">
+            <i class="pi pi-exclamation-circle"></i>
+            {{ newUserErrors.personnel_code }}
+          </small>
         </div>
+
+        <!-- کد ملی -->
         <div class="form-field full">
-          <label>کد ملی</label>
-          <InputText v-model="newUserForm.national_code" class="w-full" placeholder="10 رقم" dir="ltr" />
+          <label>کد ملی <span>*</span></label>
+          <InputText
+              v-model="newUserForm.national_code"
+              class="w-full"
+              :class="{ 'p-invalid': newUserErrors.national_code }"
+              placeholder="10 رقم"
+              dir="ltr"
+              maxlength="10"
+              @input="clearFieldError('national_code')"
+          />
+          <small v-if="newUserErrors.national_code" class="field-error">
+            <i class="pi pi-exclamation-circle"></i>
+            {{ newUserErrors.national_code }}
+          </small>
         </div>
+
+        <!-- رمز عبور پیش‌فرض -->
         <div class="form-field full">
           <label>رمز عبور پیش‌فرض</label>
-          <InputText v-model="newUserForm.password" class="w-full" type="text" dir="ltr" />
-          <small class="text-gray-500">کاربر می‌تواند پس از اولین ورود آن را تغییر دهد.</small>
+          <div class="password-wrapper">
+            <InputText
+                v-model="newUserForm.password"
+                class="w-full"
+                :type="showPassword ? 'text' : 'password'"
+                dir="ltr"
+                placeholder="رمز عبور"
+            />
+            <button
+                type="button"
+                class="password-toggle"
+                @click="showPassword = !showPassword"
+                v-tooltip.bottom="showPassword ? 'مخفی کردن' : 'نمایش'"
+            >
+              <i :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+            </button>
+          </div>
+          <small class="field-hint">
+            <i class="pi pi-info-circle"></i>
+            کاربر می‌تواند پس از اولین ورود آن را تغییر دهد.
+          </small>
         </div>
       </div>
 
       <template #footer>
         <Button label="انصراف" severity="secondary" text @click="newUserDialogVisible = false" />
-        <Button label="ایجاد و انتخاب" icon="pi pi-check" :loading="savingNewUser" @click="saveNewUser" />
+        <Button
+            label="ایجاد و انتخاب"
+            icon="pi pi-check"
+            :loading="savingNewUser"
+            @click="saveNewUser"
+        />
       </template>
     </Dialog>
   </div>
@@ -915,25 +1013,6 @@ function assignPositionLevels(tree, parentUnitLevel = 0, positionDepth = 0) {
 
 // محاسبه counts برای هر نود
 function enrichNodesWithCounts(tree) {
-  function walk(items) {
-    for (const node of items || []) {
-      let posCount = 0
-      let empCount = 0
-      if (node.data.type === 'position') {
-        posCount = 1
-        empCount = node.data.employees?.length || 0
-      }
-      if (node.children?.length) {
-        const childStats = walk(node.children)
-        posCount += childStats.positions
-        empCount += childStats.employees
-      }
-      node.data.positionsCount = posCount
-      node.data.employeesCount = empCount
-    }
-    return { positions: posCount || 0, employees: empCount || 0 }
-  }
-  // اصلاح: بازگشت صحیح
   function compute(items) {
     let totalPos = 0, totalEmp = 0
     for (const node of items || []) {
@@ -1130,8 +1209,10 @@ const selectedUser = ref(null)
 const userSuggestions = ref([])
 const searchingUser = ref(false)
 
+// ═══════ NEW USER FORM (با Validation) ═══════
 const newUserDialogVisible = ref(false)
 const savingNewUser = ref(false)
+const showPassword = ref(false)
 const newUserForm = ref({
   name: '',
   mobile: '',
@@ -1139,6 +1220,91 @@ const newUserForm = ref({
   personnel_code: '',
   password: '123456',
 })
+
+// خطاهای field-level
+const newUserErrors = ref({
+  general: '',
+  name: '',
+  mobile: '',
+  national_code: '',
+  personnel_code: '',
+})
+
+// اعتبارسنجی فرم پرسنل جدید
+function validateNewUserForm() {
+  let isValid = true
+  newUserErrors.value = {
+    general: '',
+    name: '',
+    mobile: '',
+    national_code: '',
+    personnel_code: '',
+  }
+
+  // نام و نام خانوادگی
+  if (!newUserForm.value.name?.trim()) {
+    newUserErrors.value.name = 'نام و نام خانوادگی الزامی است'
+    isValid = false
+  } else if (newUserForm.value.name.trim().length < 3) {
+    newUserErrors.value.name = 'نام باید حداقل ۳ کاراکتر باشد'
+    isValid = false
+  }
+
+  // شماره موبایل
+  if (!newUserForm.value.mobile?.trim()) {
+    newUserErrors.value.mobile = 'شماره موبایل الزامی است'
+    isValid = false
+  } else if (!/^09\d{9}$/.test(newUserForm.value.mobile.trim())) {
+    newUserErrors.value.mobile = 'شماره موبایل باید 11 رقم و با 09 شروع شود'
+    isValid = false
+  }
+
+  // کد پرسنلی
+  if (!newUserForm.value.personnel_code?.trim()) {
+    newUserErrors.value.personnel_code = 'کد پرسنلی الزامی است'
+    isValid = false
+  } else if (newUserForm.value.personnel_code.trim().length < 2) {
+    newUserErrors.value.personnel_code = 'کد پرسنلی باید حداقل 2 کاراکتر باشد'
+    isValid = false
+  }
+
+  // کد ملی
+  if (!newUserForm.value.national_code?.trim()) {
+    newUserErrors.value.national_code = 'کد ملی الزامی است'
+    isValid = false
+  } else if (!/^\d{10}$/.test(newUserForm.value.national_code.trim())) {
+    newUserErrors.value.national_code = 'کد ملی باید 10 رقم باشد'
+    isValid = false
+  }
+
+  return isValid
+}
+
+// پاک کردن خطای یک فیلد هنگام تایپ
+function clearFieldError(field) {
+  if (newUserErrors.value[field]) {
+    newUserErrors.value[field] = ''
+  }
+}
+
+// ریست فرم پرسنل جدید
+function resetNewUserForm() {
+  newUserForm.value = {
+    name: '',
+    mobile: '',
+    national_code: '',
+    personnel_code: '',
+    password: '123456',
+  }
+  newUserErrors.value = {
+    general: '',
+    name: '',
+    mobile: '',
+    national_code: '',
+    personnel_code: '',
+  }
+  showPassword.value = false
+}
 
 async function searchUsers(event) {
   searchingUser.value = true
@@ -1156,13 +1322,13 @@ async function searchUsers(event) {
 }
 
 async function saveNewUser() {
-  if (!newUserForm.value.name || !newUserForm.value.mobile) {
-    errorMessage.value = 'نام و موبایل الزامی است.'
+  // اعتبارسنجی سمت کلاینت
+  if (!validateNewUserForm()) {
     return
   }
 
   savingNewUser.value = true
-  errorMessage.value = ''
+  newUserErrors.value.general = ''
 
   try {
     const response = await axios.post('hr/users', newUserForm.value)
@@ -1178,15 +1344,50 @@ async function saveNewUser() {
     newUserDialogVisible.value = false
     successMessage.value = `کاربر "${createdUser.name}" با موفقیت ایجاد و انتخاب شد.`
 
-    newUserForm.value = {
-      name: '',
-      mobile: '',
-      national_code: '',
-      personnel_code: '',
-      password: '123456'
-    }
+    resetNewUserForm()
   } catch (error) {
-    errorMessage.value = error.response?.data?.message ?? 'خطا در ایجاد کاربر.'
+    // هندلینگ خطاهای بک‌اند
+    if (error.response?.status === 422) {
+      // خطاهای validation از بک‌اند
+      const errors = error.response.data.errors || {}
+
+      if (errors.name) {
+        newUserErrors.value.name = Array.isArray(errors.name) ? errors.name[0] : errors.name
+      }
+      if (errors.mobile) {
+        newUserErrors.value.mobile = Array.isArray(errors.mobile) ? errors.mobile[0] : errors.mobile
+      }
+      if (errors.national_code) {
+        newUserErrors.value.national_code = Array.isArray(errors.national_code) ? errors.national_code[0] : errors.national_code
+      }
+      if (errors.personnel_code) {
+        newUserErrors.value.personnel_code = Array.isArray(errors.personnel_code) ? errors.personnel_code[0] : errors.personnel_code
+      }
+
+      // اگر خطای کلی وجود دارد
+      if (error.response.data.message) {
+        newUserErrors.value.general = error.response.data.message
+      }
+    } else if (error.response?.status === 409) {
+      // خطای تکراری بودن (duplicate)
+      const message = error.response.data.message || 'این اطلاعات قبلاً ثبت شده است'
+      newUserErrors.value.general = message
+
+      // اگر بک‌اند فیلد خاصی را مشخص کرده
+      if (error.response.data.field === 'mobile') {
+        newUserErrors.value.mobile = 'این شماره موبایل قبلاً ثبت شده است'
+      } else if (error.response.data.field === 'national_code') {
+        newUserErrors.value.national_code = 'این کد ملی قبلاً ثبت شده است'
+      } else if (error.response.data.field === 'personnel_code') {
+        newUserErrors.value.personnel_code = 'این کد پرسنلی قبلاً ثبت شده است'
+      }
+    } else if (error.response?.data?.message) {
+      // سایر خطاهای بک‌اند
+      newUserErrors.value.general = error.response.data.message
+    } else {
+      // خطای نامشخص
+      newUserErrors.value.general = 'خطا در ایجاد کاربر. لطفاً دوباره تلاش کنید.'
+    }
   } finally {
     savingNewUser.value = false
   }
@@ -2145,6 +2346,46 @@ DIALOGS
 .ml-2 { @apply mr-2; }
 .flex-grow-1 { flex: 1; }
 :deep(.p-select) { width: 100%; }
+
+/* ═══════════════════════════════════════════
+NEW USER DIALOG - VALIDATION STYLES
+═══════════════════════════════════════════ */
+.form-error-banner {
+  @apply flex items-start gap-2 p-3 mb-4 rounded-lg border;
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+.form-error-banner i {
+  @apply text-red-500 mt-0.5 flex-shrink-0;
+}
+.form-error-banner span {
+  @apply flex-1 text-sm;
+}
+.error-close {
+  @apply text-red-400 hover:text-red-600 transition-colors;
+}
+
+.field-error {
+  @apply flex items-center gap-1 text-red-600 text-[11px] mt-1;
+}
+.field-error i {
+  @apply text-[9px];
+}
+
+:deep(.p-invalid) {
+  @apply border-red-300;
+}
+:deep(.p-invalid:focus) {
+  @apply border-red-400 ring-2 ring-red-100;
+}
+
+.password-wrapper {
+  @apply relative flex items-center;
+}
+.password-toggle {
+  @apply absolute left-2 w-8 h-8 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all grid place-items-center;
+}
 
 /* ═══════════════════════════════════════════
 ANIMATION
