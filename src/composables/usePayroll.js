@@ -1,6 +1,6 @@
 // resources/js/Modules/Payroll/Composables/usePayroll.js
 import { ref, computed } from 'vue';
-import { payrollApi } from '@/Services/payrollApi';
+import { payrollApi } from '@/services/payrollApi';
 import { useFormatter } from '@/composables/useFormatter.js';
 
  export function usePayroll() {
