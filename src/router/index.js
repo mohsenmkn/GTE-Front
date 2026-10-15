@@ -371,6 +371,17 @@ const router = createRouter({
 
 
 // ═══════ منابع انسانی ═══════
+
+                {
+                    path: '/hr/dashboard',
+                    name: 'hr.dashboard',
+                    component: () => import('@/views/HR/HRDashboard.vue'),
+                    meta: {
+                        title: 'داشبورد منابع انسانی',
+                        requiresAuth: true,
+                        permission: 'hr.view',
+                    },
+                },
                 {
                     path: '/hr/org-chart',
                     name: 'hr.org-chart',

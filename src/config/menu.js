@@ -352,14 +352,13 @@ export const menuItems = [
         icon: Building2,           // ← قبلاً import شده ✅
         access: 'hr.view',
         children: [
-            // {
-            //     key: 'org-chart',
-            //     label: 'چارت سازمانی',
-            //     to: '/hr/org-chart',
-            //     access: 'hr.view',
-            //     icon: FolderTree,  // ← قبلاً import شده ✅
-            // },
-            // ✅ جدید
+            {
+                key: 'hr-dashboard',
+                label: 'داشبورد منابع انسانی',
+                icon: LayoutDashboard,
+                to: '/hr/dashboard',
+                permission: 'hr.view',
+            },
             {
                 key: 'org-structure',
                 label: 'چارت سازمانی',
