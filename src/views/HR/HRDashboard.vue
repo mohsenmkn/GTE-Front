@@ -297,7 +297,7 @@
       </section>
 
       <!-- ═══════════════════════════════════════════
-           02 — STRUCTURE
+           03 — STRUCTURE
       ═══════════════════════════════════════════ -->
       <section
           id="hr-structure"
@@ -305,7 +305,7 @@
       >
         <div class="section-head">
           <div class="flex items-center gap-3">
-            <span class="section-number">۰۲</span>
+            <span class="section-number">۰۳</span>
             <div>
               <h2 class="section-title">ساختار سازمانی و نیروی کار</h2>
               <p class="section-caption">
@@ -501,7 +501,7 @@
       </section>
 
       <!-- ═══════════════════════════════════════════
-           03 — TRAINING & COMPETENCY
+           04 — TRAINING & COMPETENCY
       ═══════════════════════════════════════════ -->
       <section
           id="hr-development"
@@ -509,7 +509,7 @@
       >
         <div class="section-head">
           <div class="flex items-center gap-3">
-            <span class="section-number">۰۳</span>
+            <span class="section-number">۰۴</span>
             <div>
               <h2 class="section-title">آموزش و توسعه شایستگی</h2>
               <p class="section-caption">
@@ -677,7 +677,7 @@
       </section>
 
       <!-- ═══════════════════════════════════════════
-           04 — ALERTS
+           05 — ALERTS
       ═══════════════════════════════════════════ -->
       <section
           id="hr-alerts"
@@ -685,7 +685,7 @@
       >
         <div class="section-head">
           <div class="flex items-center gap-3">
-            <span class="section-number">۰۴</span>
+            <span class="section-number">۰۵</span>
             <div>
               <h2 class="section-title">هشدارها و اقدامات فوری</h2>
               <p class="section-caption">
@@ -872,7 +872,7 @@
                 </div>
 
                 <span class="item-date" dir="rtl">
-                  <i class="pi pi-calendar minus text-[10px]"></i>
+                  <i class="pi pi-calendar-minus text-[10px]"></i>
                   {{ change.issue_date }}
                 </span>
               </li>
@@ -949,7 +949,7 @@
       </section>
 
       <!-- ═══════════════════════════════════════════
-           05 — DATA HEALTH
+           06 — DATA HEALTH
       ═══════════════════════════════════════════ -->
       <section
           id="hr-data-health"
@@ -957,7 +957,7 @@
       >
         <div class="section-head">
           <div class="flex items-center gap-3">
-            <span class="section-number">۰۵</span>
+            <span class="section-number">۰۶</span>
             <div>
               <h2 class="section-title">سلامت داده و همگام‌سازی</h2>
               <p class="section-caption">
@@ -1146,6 +1146,274 @@
         </article>
       </section>
 
+
+      <!-- ═══════════════════════════════════════════
+     02 — SPAN OF CONTROL (یکپارچه‌شده)
+═══════════════════════════════════════════ -->
+      <section
+          id="hr-span"
+          class="dash-section"
+      >
+        <div class="section-head">
+          <div class="flex items-center gap-3">
+            <span class="section-number">۰۲</span>
+            <div>
+              <h2 class="section-title">تحلیل حیطه نظارت</h2>
+              <p class="section-caption">
+                توزیع حیطه نظارت، شناسایی مدیران بحرانی و ناکارآمد
+              </p>
+            </div>
+          </div>
+
+          <span
+              class="soft-badge"
+              :class="spanHasData ? 'badge-success' : 'badge-muted'"
+          >
+            <i :class="spanHasData ? 'pi pi-check-circle' : 'pi pi-info-circle'"></i>
+            {{ spanHasData ? 'داده ساختاری موجود است' : 'ساختار تعریف نشده' }}
+          </span>
+        </div>
+
+        <template v-if="spanHasData">
+          <!-- کارت‌های آماری حیطه نظارت -->
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <article
+                v-for="stat in spanStatCards"
+                :key="stat.key"
+                class="kpi-card"
+                :class="[
+                `tone-${stat.tone}`,
+                { 'is-alert': stat.alert }
+              ]"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <span class="icon-box">
+                  <i :class="`pi ${stat.icon}`"></i>
+                </span>
+
+                <span
+                    v-if="stat.alert"
+                    class="pill pill-warning"
+                >
+                  <i class="pi pi-exclamation-circle"></i>
+                  خارج از استاندارد
+                </span>
+
+                <i
+                    v-else
+                    class="pi pi-arrow-up-left kpi-watermark"
+                ></i>
+              </div>
+
+              <div class="mt-4">
+                <p class="kpi-label">{{ stat.label }}</p>
+
+                <div class="mt-1.5 flex items-baseline gap-1.5">
+                  <strong class="kpi-value">{{ stat.value }}</strong>
+                  <span
+                      v-if="stat.unit"
+                      class="kpi-unit"
+                  >
+                    {{ stat.unit }}
+                  </span>
+                </div>
+              </div>
+
+              <p class="kpi-foot">
+                <i :class="`pi ${stat.footIcon}`"></i>
+                <span>{{ stat.hint }}</span>
+              </p>
+            </article>
+          </div>
+
+          <!-- نمودار + لیست‌ها -->
+          <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <!-- نمودار توزیع -->
+            <article class="dashboard-card flex h-full flex-col">
+              <header class="panel-head">
+                <div class="flex items-center gap-3">
+                  <span class="icon-box tone-indigo !h-9 !w-9 !text-base">
+                    <i class="pi pi-chart-bar"></i>
+                  </span>
+                  <div>
+                    <h3 class="panel-title">توزیع حیطه نظارت</h3>
+                    <p class="panel-subtitle">
+                      بر اساس تعداد زیرمجموعه هر مدیر
+                    </p>
+                  </div>
+                </div>
+                <span class="soft-badge">
+                  <i class="pi pi-users"></i>
+                  {{ fmt(data.span_of_control.total_managers) }} مدیر
+                </span>
+              </header>
+
+              <div class="panel-body flex-1">
+                <div class="chart-box chart-tall">
+                  <Chart
+                      type="bar"
+                      :data="spanDistributionChart"
+                      :options="spanDistributionOptions"
+                  />
+                  <div
+                      v-if="!spanChartHasData"
+                      class="chart-empty"
+                  >
+                    <i class="pi pi-chart-bar"></i>
+                    <span>داده‌ای برای نمایش وجود ندارد</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- ستون لیست‌ها -->
+            <div class="flex flex-col gap-4">
+              <!-- مدیران بحرانی -->
+              <article
+                  class="dashboard-card"
+                  :class="{
+                  'panel-danger': data.span_of_control.critical_managers.length > 0
+                }"
+              >
+                <header class="panel-head">
+                  <div class="flex items-center gap-3">
+                    <span class="icon-box tone-rose !h-9 !w-9 !text-base">
+                      <i class="pi pi-exclamation-triangle"></i>
+                    </span>
+                    <div>
+                      <h3 class="panel-title">حیطه نظارت بیش از حد بزرگ</h3>
+                      <p class="panel-subtitle">
+                        احتمال فرسودگی مدیریتی و کاهش کیفیت نظارت
+                      </p>
+                    </div>
+                  </div>
+                  <span
+                      v-if="data.span_of_control.critical_managers.length"
+                      class="pill pill-danger"
+                  >
+                    {{ fmt(data.span_of_control.critical_managers.length) }} مورد
+                  </span>
+                </header>
+
+                <ul
+                    v-if="data.span_of_control.critical_managers.length"
+                    class="alert-list"
+                    tabindex="0"
+                    aria-label="فهرست مدیران با حیطه نظارت بحرانی"
+                >
+                  <li
+                      v-for="manager in data.span_of_control.critical_managers"
+                      :key="manager.id"
+                      class="alert-item"
+                  >
+                    <span class="item-avatar tone-rose">
+                      <i class="pi pi-user"></i>
+                    </span>
+
+                    <div class="min-w-0 flex-1">
+                      <p class="item-title">{{ manager.position }}</p>
+                      <p class="item-sub">{{ manager.unit }}</p>
+                    </div>
+
+                    <span
+                        class="pill"
+                        :class="
+                        manager.severity === 'critical'
+                          ? 'pill-danger'
+                          : 'pill-warning'
+                      "
+                    >
+                      <i class="pi pi-users"></i>
+                      {{ fmt(manager.reports) }} زیرمجموعه
+                    </span>
+                  </li>
+                </ul>
+
+                <div v-else class="empty-state">
+                  <i class="pi pi-check-circle"></i>
+                  <p>مدیری با حیطه نظارت بحرانی وجود ندارد</p>
+                  <span>همه مدیران در محدوده استاندارد هستند.</span>
+                </div>
+              </article>
+
+              <!-- مدیران کم‌بازده -->
+              <article
+                  class="dashboard-card"
+                  :class="{
+                  'panel-warning': data.span_of_control.underutilized_managers.length > 0
+                }"
+              >
+                <header class="panel-head">
+                  <div class="flex items-center gap-3">
+                    <span class="icon-box tone-amber !h-9 !w-9 !text-base">
+                      <i class="pi pi-info-circle"></i>
+                    </span>
+                    <div>
+                      <h3 class="panel-title">حیطه نظارت خیلی کوچک</h3>
+                      <p class="panel-subtitle">
+                        احتمال ناکارآمدی و تمرکززدایی ضعیف
+                      </p>
+                    </div>
+                  </div>
+                  <span
+                      v-if="data.span_of_control.underutilized_managers.length"
+                      class="pill pill-warning"
+                  >
+                    {{ fmt(data.span_of_control.underutilized_managers.length) }} مورد
+                  </span>
+                </header>
+
+                <ul
+                    v-if="data.span_of_control.underutilized_managers.length"
+                    class="alert-list"
+                    tabindex="0"
+                    aria-label="فهرست مدیران با حیطه نظارت کوچک"
+                >
+                  <li
+                      v-for="manager in data.span_of_control.underutilized_managers"
+                      :key="manager.id"
+                      class="alert-item"
+                  >
+                    <span class="item-avatar tone-amber">
+                      <i class="pi pi-user"></i>
+                    </span>
+
+                    <div class="min-w-0 flex-1">
+                      <p class="item-title">{{ manager.position }}</p>
+                      <p class="item-sub">{{ manager.unit }}</p>
+                    </div>
+
+                    <span class="pill pill-warning">
+                      <i class="pi pi-users"></i>
+                      {{ fmt(manager.reports) }} زیرمجموعه
+                    </span>
+                  </li>
+                </ul>
+
+                <div v-else class="empty-state">
+                  <i class="pi pi-check-circle"></i>
+                  <p>همه مدیران حیطه نظارت مناسب دارند</p>
+                  <span>مورد ناکارآمدی شناسایی نشد.</span>
+                </div>
+              </article>
+            </div>
+          </div>
+        </template>
+
+        <div
+            v-else
+            class="dashboard-card"
+        >
+          <div class="empty-state !py-16">
+            <i class="pi pi-info-circle"></i>
+            <p>ساختار سازمانی هنوز تعریف نشده است</p>
+            <span>
+              پس از ثبت واحدها و سمت‌ها، تحلیل حیطه نظارت اینجا نمایش داده می‌شود.
+            </span>
+          </div>
+        </div>
+      </section>
+
       <!-- ═══════════════════════════════════════════
            FOOTER
       ═══════════════════════════════════════════ -->
@@ -1275,6 +1543,24 @@ const emptyData = () => ({
     }
   },
 
+  span_of_control: {
+    has_data: false,
+    total_managers: 0,
+    avg: 0,
+    min: 0,
+    max: 0,
+    median: 0,
+    distribution: {
+      very_small: 0,
+      small: 0,
+      normal: 0,
+      large: 0,
+      very_large: 0
+    },
+    critical_managers: [],
+    underutilized_managers: []
+  },
+
   charts: {
     employees_by_unit: { labels: [], values: [] },
     workforce_composition: { labels: [], values: [] },
@@ -1341,6 +1627,7 @@ const normalizeResponse = (res) => {
     organization: mergeSchema(schema.organization, source.organization),
     training: mergeSchema(schema.training, source.training),
     assessment: mergeSchema(schema.assessment, source.assessment),
+    span_of_control: mergeSchema(schema.span_of_control, source.span_of_control),
     charts: mergeSchema(schema.charts, source.charts),
     alerts: mergeSchema(schema.alerts, source.alerts),
     sync_health: mergeSchema(schema.sync_health, source.sync_health)
@@ -1490,11 +1777,25 @@ const alertCount = computed(() => {
   )
 })
 
+const spanHasData = computed(() => Boolean(data.value?.span_of_control?.has_data))
+
+const spanChartHasData = computed(() => {
+  const distribution = data.value?.span_of_control?.distribution
+  if (!distribution) return false
+
+  return Object.values(distribution).some((value) => Number(value) > 0)
+})
+
 const sections = computed(() => [
   {
     id: 'hr-overview',
     short: 'خلاصه مدیریتی',
     icon: 'pi-chart-line'
+  },
+  {
+    id: 'hr-span',
+    short: 'حیطه نظارت',
+    icon: 'pi-sitemap'
   },
   {
     id: 'hr-structure',
@@ -1658,6 +1959,66 @@ const kpiCards = computed(() => {
 })
 
 /* ═══════════════════════════════════════════════
+   SPAN OF CONTROL — کارت‌های آماری
+═══════════════════════════════════════════════ */
+
+const spanStatCards = computed(() => {
+  const span = data.value?.span_of_control
+  if (!span || !span.has_data) return []
+
+  const normalCount = Number(span.distribution?.normal ?? 0)
+  const totalManagers = Number(span.total_managers ?? 0)
+  const isHealthy = totalManagers > 0 && normalCount > totalManagers / 2
+
+  return [
+    {
+      key: 'total-managers',
+      label: 'تعداد مدیران',
+      value: fmt(span.total_managers),
+      unit: 'نفر',
+      icon: 'pi-users',
+      tone: 'indigo',
+      footIcon: 'pi-briefcase',
+      hint: 'سمت دارای زیرمجموعه',
+      alert: false
+    },
+    {
+      key: 'avg-span',
+      label: 'میانگین حیطه نظارت',
+      value: fmt(span.avg),
+      unit: 'زیرمجموعه',
+      icon: 'pi-chart-bar',
+      tone: 'violet',
+      footIcon: 'pi-users',
+      hint: 'به ازای هر مدیر',
+      alert: false
+    },
+    {
+      key: 'median-span',
+      label: 'میانه حیطه نظارت',
+      value: fmt(span.median),
+      unit: '',
+      icon: 'pi-minus',
+      tone: 'emerald',
+      footIcon: 'pi-sort-amount-down',
+      hint: `کمترین: ${fmt(span.min)} | بیشترین: ${fmt(span.max)}`,
+      alert: false
+    },
+    {
+      key: 'normal-managers',
+      label: 'مدیران با حیطه نظارت نرمال',
+      value: fmt(normalCount),
+      unit: 'نفر',
+      icon: 'pi-check-circle',
+      tone: isHealthy ? 'emerald' : 'amber',
+      footIcon: 'pi-info-circle',
+      hint: 'استاندارد: ۶ تا ۱۱ زیرمجموعه',
+      alert: !isHealthy
+    }
+  ]
+})
+
+/* ═══════════════════════════════════════════════
    DERIVED LISTS
 ═══════════════════════════════════════════════ */
 
@@ -1692,7 +2053,7 @@ const structureStats = computed(() => {
       icon: 'pi-sitemap'
     },
     {
-      label: 'دهانه مدیریت',
+      label: 'حیطه نظارت',
       value: fmt(org.avg_span_of_control),
       unit: 'نفر / سمت',
       icon: 'pi-users'
@@ -1983,6 +2344,45 @@ const assessmentStatusChart = computed(() => ({
   ]
 }))
 
+const spanDistributionChart = computed(() => ({
+  labels: [
+    'خیلی کوچک (<۳)',
+    'کوچک (۳-۵)',
+    'نرمال (۶-۱۱)',
+    'بزرگ (۱۲-۱۹)',
+    'خیلی بزرگ (+۲۰)'
+  ],
+  datasets: [
+    {
+      label: 'تعداد مدیران',
+      data: [
+        data.value?.span_of_control.distribution.very_small ?? 0,
+        data.value?.span_of_control.distribution.small ?? 0,
+        data.value?.span_of_control.distribution.normal ?? 0,
+        data.value?.span_of_control.distribution.large ?? 0,
+        data.value?.span_of_control.distribution.very_large ?? 0
+      ],
+      backgroundColor: [
+        PALETTE.slate,
+        PALETTE.amber,
+        PALETTE.emerald,
+        '#fb923c',
+        PALETTE.rose
+      ],
+      hoverBackgroundColor: [
+        '#64748b',
+        '#d97706',
+        '#059669',
+        '#ea580c',
+        '#e11d48'
+      ],
+      borderRadius: 6,
+      borderSkipped: false,
+      barThickness: 38
+    }
+  ]
+}))
+
 /* ═══════════════════════════════════════════════
    CHART OPTIONS — RTL + یکپارچه
 ═══════════════════════════════════════════════ */
@@ -2153,6 +2553,35 @@ const doughnutOptions = {
   plugins: {
     legend: legendStyle,
     tooltip: tooltipStyle
+  }
+}
+
+const spanDistributionOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  layout: baseLayout,
+  animation: chartAnimation,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      ...tooltipStyle,
+      callbacks: {
+        label: (ctx) => `${fmt(ctx.parsed.y)} مدیر`
+      }
+    }
+  },
+  scales: {
+    x: {
+      reverse: true,
+      grid: { display: false },
+      ticks: { ...tickStyle(10), maxRotation: 0, minRotation: 0 }
+    },
+    y: {
+      position: 'right',
+      beginAtZero: true,
+      grid: { color: GRID_COLOR, drawBorder: false },
+      ticks: { ...tickStyle(), precision: 0 }
+    }
   }
 }
 
@@ -2366,6 +2795,10 @@ onBeforeUnmount(() => {
 
 .badge-success {
   @apply border-emerald-100 bg-emerald-50 text-emerald-600;
+}
+
+.badge-muted {
+  @apply border-slate-200 bg-slate-50 text-slate-500;
 }
 
 .pill {
@@ -2624,7 +3057,6 @@ onBeforeUnmount(() => {
 
 .panel-danger {
   border-color: #fecdd3;
-  background: linear-gradient(180deg, #ffffff 0%, #fff1f2/30 100%);
   background: linear-gradient(180deg, #ffffff 0%, #fff5f6 100%);
 }
 

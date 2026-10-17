@@ -376,7 +376,9 @@
       </template>
     </Dialog>
 
-    <!-- دیالوگ افزودن پرسنل به سمت -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- دیالوگ افزودن پرسنل به سمت (دستی) -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
     <Dialog
         v-model:visible="showAssignDialog"
         header="افزودن پرسنل به سمت"
@@ -384,24 +386,30 @@
         modal
     >
       <div v-if="selectedPosition" class="mb-4">
+        <!-- اطلاعات سمت مقصد -->
         <div class="bg-blue-50 p-3 rounded-lg mb-4">
-      <span class="text-sm text-blue-800">
-        سمت مقصد: <strong>{{ selectedPosition.post_title }}</strong>
-        <span class="text-gray-500">({{ selectedPosition.unit?.title }})</span>
-      </span>
+          <div class="flex items-center gap-2 text-blue-800">
+            <i class="pi pi-info-circle"></i>
+            <span class="text-sm">
+          سمت مقصد: <strong>{{ selectedPosition.post_title }}</strong>
+          <span class="text-gray-500">({{ selectedPosition.unit?.title }})</span>
+        </span>
+          </div>
         </div>
 
+        <!-- جستجو -->
         <div class="relative mb-4">
           <i class="pi pi-search absolute right-3 top-3 text-gray-400"></i>
           <InputText
               v-model="employeeSearch"
-              placeholder="جستجو بر اساس نام یا کد پرسنلی..."
+              placeholder="جستجو بر اساس نام، کد پرسنلی یا موبایل..."
               class="w-full pr-10"
               @input="debouncedSearchEmployees"
           />
         </div>
       </div>
 
+      <!-- جدول پرسنل قابل تخصیص -->
       <DataTable
           :value="availableEmployees"
           :loading="loadingAvailableEmployees"
@@ -425,9 +433,10 @@
         </Column>
       </DataTable>
 
-      <div v-if="selectedEmployees.length" class="mt-3 text-sm text-gray-600">
-        <i class="pi pi-check-circle text-green-500 ml-1"></i>
-        {{ selectedEmployees.length }} نفر انتخاب شده است
+      <!-- تعداد انتخاب شده -->
+      <div v-if="selectedEmployees.length" class="mt-3 text-sm text-gray-600 flex items-center gap-2">
+        <i class="pi pi-check-circle text-green-500"></i>
+        <span>{{ selectedEmployees.length }} نفر انتخاب شده است</span>
       </div>
 
       <template #footer>
@@ -499,7 +508,7 @@
           </div>
         </div>
 
-        <!-- ناحیه آپلود فایل -->
+        <!-- ناحیه آپلود فایل (Drag & Drop) -->
         <div
             class="border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer"
             :class="excelDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'"
@@ -735,6 +744,8 @@ const positions = ref([])
 const selectedPosition = ref(null)
 const positionEmployees = ref([])
 const loadingPositionEmployees = ref(false)
+
+// ── متغیرهای دیالوگ افزودن پرسنل دستی ──────────────────
 const showAssignDialog = ref(false)
 const availableEmployees = ref([])
 const loadingAvailableEmployees = ref(false)
@@ -742,6 +753,7 @@ const selectedEmployees = ref([])
 const assigningEmployees = ref(false)
 const employeeSearch = ref('')
 let searchTimeout = null
+
 // ── متغیرهای دیالوگ Import اکسل ──────────────────
 const showExcelDialog = ref(false)
 const excelStep = ref('upload') // 'upload' | 'preview'
@@ -769,8 +781,235 @@ onMounted(async () => {
   await loadPositions() // ✅ اضافه شد
 })
 
+function cancelExcelImport() {
+  showExcelImport.value = false
+  excelPreview.value = null
+  loadingExcelPreview.value = false
+}
 
-// ── متدهای تب نگاشت پرسنل به سمت ──────────────────
+async function loadCycles() {
+  try {
+    const { data } = await api.get('/assessment/cycles')
+    cycles.value = data.cycles || []
+    if (!selectedCycleId.value && cycles.value.length) {
+      selectedCycleId.value = cycles.value.find(c => c.status === 'active')?.id || cycles.value[0].id
+    }
+  } catch (e) {
+    console.error('Load cycles error:', e)
+  }
+}
+
+async function loadData() {
+  loading.value = true
+  try {
+    const { data } = await api.get('/assessment/mappings')
+    mappings.value = data.mappings || []
+    unmappedPositions.value = data.unmapped_positions || []
+    availablePosts.value = data.available_posts || []
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'خطا', detail: 'خطا در دریافت داده‌ها', life: 3000 })
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadNoEvaluator() {
+  if (!selectedCycleId.value) return
+
+  loadingEvaluators.value = true
+  try {
+    const { data } = await api.get('/assessment/mappings/no-evaluator', {
+      params: { cycle_id: selectedCycleId.value }
+    })
+    noEvaluatorPositions.value = data.positions || []
+    noEvaluatorSummary.value = data.summary || { total: 0 }
+    selectedEvaluators.value = {}
+  } catch (e) {
+    console.error('Load no evaluator error:', e)
+    toast.add({ severity: 'error', summary: 'خطا', detail: 'خطا در دریافت لیست بدون ارزیاب', life: 3000 })
+  } finally {
+    loadingEvaluators.value = false
+  }
+}
+
+async function loadUnits() {
+  try {
+    const { data } = await api.get('/hr/org-chart/units')
+    units.value = data.units || []
+  } catch (e) {
+    console.error('Load units error:', e)
+  }
+}
+
+function onCycleChange() {
+  loadNoEvaluator()
+}
+
+function onMappingTypeChange() {
+  form.value.post_title_pattern = ''
+  form.value.organizational_unit_id = null
+}
+
+function quickMap(position) {
+  editingPosition.value = position
+  form.value = {
+    mapping_type: 'title_pattern',
+    post_title_pattern: position.post_title,
+    organizational_unit_id: position.unit_id,
+    assessment_post_id: null,
+    description: `نگاشت سریع برای ${position.post_title}`,
+  }
+  showCreateDialog.value = true
+}
+
+async function saveMapping() {
+  if (!form.value.assessment_post_id) {
+    toast.add({
+      severity: 'warn',
+      summary: 'هشدار',
+      detail: 'انتخاب شناسنامه مقصد الزامی است',
+      life: 3000,
+    })
+    return
+  }
+
+  if (form.value.mapping_type === 'title_pattern' && !form.value.post_title_pattern) {
+    toast.add({
+      severity: 'warn',
+      summary: 'هشدار',
+      detail: 'الگوی عنوان الزامی است',
+      life: 3000,
+    })
+    return
+  }
+
+  if (form.value.mapping_type === 'unit' && !form.value.organizational_unit_id) {
+    toast.add({
+      severity: 'warn',
+      summary: 'هشدار',
+      detail: 'انتخاب واحد سازمانی الزامی است',
+      life: 3000,
+    })
+    return
+  }
+
+  saving.value = true
+  try {
+    const { data } = await api.post('/assessment/mappings', form.value)
+
+    // ✅ نمایش پیام مناسب بر اساس به‌روزرسانی یا ایجاد
+    if (data.updated) {
+      toast.add({
+        severity: 'success',
+        summary: 'به‌روزرسانی شد',
+        detail: 'نگاشت قبلی با موفقیت به‌روزرسانی شد',
+        life: 3000,
+      })
+    } else {
+      toast.add({
+        severity: 'success',
+        summary: 'موفق',
+        detail: 'نگاشت با موفقیت ایجاد شد',
+        life: 3000,
+      })
+    }
+
+    closeCreateDialog()
+    await loadData()
+  } catch (e) {
+    toast.add({
+      severity: 'error',
+      summary: 'خطا',
+      detail: e.response?.data?.message || 'خطا در ذخیره نگاشت',
+      life: 5000,
+    })
+  } finally {
+    saving.value = false
+  }
+}
+
+
+async function assignEvaluator(position) {
+  if (!selectedEvaluators.value[position.user_id]) {
+    toast.add({ severity: 'warn', summary: 'هشدار', detail: 'لطفاً ارزیاب را انتخاب کنید', life: 3000 })
+    return
+  }
+  if (!selectedCycleId.value) {
+    toast.add({ severity: 'warn', summary: 'هشدار', detail: 'لطفاً چرخه ارزیابی را انتخاب کنید', life: 3000 })
+    return
+  }
+
+  assigning.value[position.user_id] = true
+  try {
+    await api.post('/assessment/mappings/assign-evaluator', {
+      cycle_id: selectedCycleId.value,
+      user_id: position.user_id,
+      evaluator_id: selectedEvaluators.value[position.user_id],
+    })
+    toast.add({ severity: 'success', summary: 'موفق', detail: `ارزیاب برای ${position.name} تعیین شد`, life: 3000 })
+    await loadNoEvaluator()
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'خطا', detail: e.response?.data?.message || 'خطا در تعیین ارزیاب', life: 5000 })
+  } finally {
+    assigning.value[position.user_id] = false
+  }
+}
+
+async function toggleMapping(mapping) {
+  try {
+    await api.put(`/assessment/mappings/${mapping.id}/toggle`)
+    toast.add({ severity: 'success', summary: 'موفق', detail: mapping.is_active ? 'نگاشت غیرفعال شد' : 'نگاشت فعال شد', life: 3000 })
+    await loadData()
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'خطا', detail: 'خطا در تغییر وضعیت', life: 3000 })
+  }
+}
+
+function confirmDelete(mapping) {
+  confirm.require({
+    message: `آیا از حذف این نگاشت اطمینان دارید؟`,
+    header: 'تایید حذف',
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: 'بله، حذف شود',
+    rejectLabel: 'انصراف',
+    accept: async () => {
+      try {
+        await api.delete(`/assessment/mappings/${mapping.id}`)
+        toast.add({ severity: 'success', summary: 'موفق', detail: 'نگاشت حذف شد', life: 3000 })
+        await loadData()
+      } catch (e) {
+        toast.add({ severity: 'error', summary: 'خطا', detail: 'خطا در حذف', life: 3000 })
+      }
+    },
+  })
+}
+
+function getEvaluatorName(data, evaluatorId) {
+  const evaluator = data.suggested_evaluators?.find(e => e.id === evaluatorId)
+  return evaluator?.name || '—'
+}
+
+function closeCreateDialog() {
+  showCreateDialog.value = false
+  editingPosition.value = null
+  form.value = {
+    mapping_type: 'title_pattern',
+    post_title_pattern: '',
+    organizational_unit_id: null,
+    assessment_post_id: null,
+    description: '',
+  }
+}
+
+
+
+
+
+
+
+// ═══════════════════════════════════════════════════════════
+// متدهای تب نگاشت پرسنل به سمت
+// ═══════════════════════════════════════════════════════════
 
 async function loadPositions() {
   try {
@@ -782,10 +1021,9 @@ async function loadPositions() {
 }
 
 async function onPositionChange() {
-  // بستن دیالوگ اکسل اگر باز است
-  if (showExcelDialog.value) {
-    closeExcelDialog()
-  }
+  // بستن دیالوگ‌ها اگر باز هستند
+  if (showAssignDialog.value) closeAssignDialog()
+  if (showExcelDialog.value) closeExcelDialog()
 
   if (!selectedPosition.value) {
     positionEmployees.value = []
@@ -815,12 +1053,16 @@ async function loadPositionEmployees() {
       severity: 'error',
       summary: 'خطا',
       detail: 'خطا در دریافت پرسنل سمت',
-      life: 3000
+      life: 3000,
     })
   } finally {
     loadingPositionEmployees.value = false
   }
 }
+
+// ═══════════════════════════════════════════════════════════
+// متدهای دیالوگ افزودن پرسنل دستی
+// ═══════════════════════════════════════════════════════════
 
 function openAssignDialog() {
   showAssignDialog.value = true
@@ -835,9 +1077,97 @@ function closeAssignDialog() {
   employeeSearch.value = ''
 }
 
-// ── متدهای Import اکسل ──────────────────
+function debouncedSearchEmployees() {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    loadAvailableEmployees()
+  }, 400)
+}
 
-// ── متدهای دیالوگ Import اکسل ──────────────────
+async function loadAvailableEmployees() {
+  if (!selectedPosition.value) return
+
+  loadingAvailableEmployees.value = true
+  try {
+    const { data } = await api.get(
+        `/hr/organizational-positions/${selectedPosition.value.id}/available-employees`,
+        { params: { search: employeeSearch.value || undefined } }
+    )
+    availableEmployees.value = data.data || []
+  } catch (e) {
+    console.error('Load available employees error:', e)
+  } finally {
+    loadingAvailableEmployees.value = false
+  }
+}
+
+async function assignEmployeesToPosition() {
+  if (!selectedPosition.value || !selectedEmployees.value.length) return
+
+  assigningEmployees.value = true
+  try {
+    const userIds = selectedEmployees.value.map(emp => emp.id)
+    const { data } = await api.post(
+        `/hr/organizational-positions/${selectedPosition.value.id}/assign-employees`,
+        { user_ids: userIds }
+    )
+
+    toast.add({
+      severity: 'success',
+      summary: 'موفق',
+      detail: data.message || 'پرسنل با موفقیت تخصیص یافتند',
+      life: 3000,
+    })
+
+    closeAssignDialog()
+    await loadPositionEmployees()
+  } catch (e) {
+    toast.add({
+      severity: 'error',
+      summary: 'خطا',
+      detail: e.response?.data?.message || 'خطا در تخصیص پرسنل',
+      life: 5000,
+    })
+  } finally {
+    assigningEmployees.value = false
+  }
+}
+
+function confirmUnassign(employee) {
+  confirm.require({
+    message: `آیا از حذف «${employee.name}» از این سمت اطمینان دارید؟`,
+    header: 'تایید حذف',
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: 'بله، حذف شود',
+    rejectLabel: 'انصراف',
+    accept: async () => {
+      try {
+        await api.post(
+            `/hr/organizational-positions/${selectedPosition.value.id}/unassign-employees`,
+            { user_ids: [employee.user_id] }
+        )
+        toast.add({
+          severity: 'success',
+          summary: 'موفق',
+          detail: `«${employee.name}» از سمت حذف شد`,
+          life: 3000,
+        })
+        await loadPositionEmployees()
+      } catch (e) {
+        toast.add({
+          severity: 'error',
+          summary: 'خطا',
+          detail: e.response?.data?.message || 'خطا در حذف پرسنل',
+          life: 3000,
+        })
+      }
+    },
+  })
+}
+
+// ═══════════════════════════════════════════════════════════
+// متدهای دیالوگ Import اکسل
+// ═══════════════════════════════════════════════════════════
 
 function openExcelImportDialog() {
   if (!selectedPosition.value) {
@@ -1004,7 +1334,6 @@ async function confirmExcelImport() {
 
     // به‌روزرسانی لیست پرسنل سمت
     await loadPositionEmployees()
-
   } catch (e) {
     toast.add({
       severity: 'error',
@@ -1017,309 +1346,4 @@ async function confirmExcelImport() {
   }
 }
 
-function cancelExcelImport() {
-  showExcelImport.value = false
-  excelPreview.value = null
-  loadingExcelPreview.value = false
-}
-
-function debouncedSearchEmployees() {
-  if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    loadAvailableEmployees()
-  }, 400)
-}
-
-async function loadAvailableEmployees() {
-  if (!selectedPosition.value) return
-
-  loadingAvailableEmployees.value = true
-  try {
-    const { data } = await api.get(
-        `/hr/organizational-positions/${selectedPosition.value.id}/available-employees`,
-        { params: { search: employeeSearch.value || undefined } }
-    )
-    availableEmployees.value = data.data || []
-  } catch (e) {
-    console.error('Load available employees error:', e)
-  } finally {
-    loadingAvailableEmployees.value = false
-  }
-}
-
-async function assignEmployeesToPosition() {
-  if (!selectedPosition.value || !selectedEmployees.value.length) return
-
-  assigningEmployees.value = true
-  try {
-    const userIds = selectedEmployees.value.map(emp => emp.id)
-    const { data } = await api.post(
-        `/hr/organizational-positions/${selectedPosition.value.id}/assign-employees`,
-        { user_ids: userIds }
-    )
-
-    toast.add({
-      severity: 'success',
-      summary: 'موفق',
-      detail: data.message || 'پرسنل با موفقیت تخصیص یافتند',
-      life: 3000,
-    })
-
-    closeAssignDialog()
-    await loadPositionEmployees()
-  } catch (e) {
-    toast.add({
-      severity: 'error',
-      summary: 'خطا',
-      detail: e.response?.data?.message || 'خطا در تخصیص پرسنل',
-      life: 5000,
-    })
-  } finally {
-    assigningEmployees.value = false
-  }
-}
-
-function confirmUnassign(employee) {
-  confirm.require({
-    message: `آیا از حذف «${employee.name}» از این سمت اطمینان دارید؟`,
-    header: 'تایید حذف',
-    icon: 'pi pi-exclamation-triangle',
-    acceptLabel: 'بله، حذف شود',
-    rejectLabel: 'انصراف',
-    accept: async () => {
-      try {
-        await api.post(
-            `/hr/organizational-positions/${selectedPosition.value.id}/unassign-employees`,
-            { user_ids: [employee.user_id] }
-        )
-        toast.add({
-          severity: 'success',
-          summary: 'موفق',
-          detail: `«${employee.name}» از سمت حذف شد`,
-          life: 3000
-        })
-        await loadPositionEmployees()
-      } catch (e) {
-        toast.add({
-          severity: 'error',
-          summary: 'خطا',
-          detail: e.response?.data?.message || 'خطا در حذف پرسنل',
-          life: 3000
-        })
-      }
-    },
-  })
-}
-async function loadCycles() {
-  try {
-    const { data } = await api.get('/assessment/cycles')
-    cycles.value = data.cycles || []
-    if (!selectedCycleId.value && cycles.value.length) {
-      selectedCycleId.value = cycles.value.find(c => c.status === 'active')?.id || cycles.value[0].id
-    }
-  } catch (e) {
-    console.error('Load cycles error:', e)
-  }
-}
-
-async function loadData() {
-  loading.value = true
-  try {
-    const { data } = await api.get('/assessment/mappings')
-    mappings.value = data.mappings || []
-    unmappedPositions.value = data.unmapped_positions || []
-    availablePosts.value = data.available_posts || []
-  } catch (e) {
-    toast.add({ severity: 'error', summary: 'خطا', detail: 'خطا در دریافت داده‌ها', life: 3000 })
-  } finally {
-    loading.value = false
-  }
-}
-
-async function loadNoEvaluator() {
-  if (!selectedCycleId.value) return
-
-  loadingEvaluators.value = true
-  try {
-    const { data } = await api.get('/assessment/mappings/no-evaluator', {
-      params: { cycle_id: selectedCycleId.value }
-    })
-    noEvaluatorPositions.value = data.positions || []
-    noEvaluatorSummary.value = data.summary || { total: 0 }
-    selectedEvaluators.value = {}
-  } catch (e) {
-    console.error('Load no evaluator error:', e)
-    toast.add({ severity: 'error', summary: 'خطا', detail: 'خطا در دریافت لیست بدون ارزیاب', life: 3000 })
-  } finally {
-    loadingEvaluators.value = false
-  }
-}
-
-async function loadUnits() {
-  try {
-    const { data } = await api.get('/hr/org-chart/units')
-    units.value = data.units || []
-  } catch (e) {
-    console.error('Load units error:', e)
-  }
-}
-
-function onCycleChange() {
-  loadNoEvaluator()
-}
-
-function onMappingTypeChange() {
-  form.value.post_title_pattern = ''
-  form.value.organizational_unit_id = null
-}
-
-function quickMap(position) {
-  editingPosition.value = position
-  form.value = {
-    mapping_type: 'title_pattern',
-    post_title_pattern: position.post_title,
-    organizational_unit_id: position.unit_id,
-    assessment_post_id: null,
-    description: `نگاشت سریع برای ${position.post_title}`,
-  }
-  showCreateDialog.value = true
-}
-
-async function saveMapping() {
-  if (!form.value.assessment_post_id) {
-    toast.add({
-      severity: 'warn',
-      summary: 'هشدار',
-      detail: 'انتخاب شناسنامه مقصد الزامی است',
-      life: 3000,
-    })
-    return
-  }
-
-  if (form.value.mapping_type === 'title_pattern' && !form.value.post_title_pattern) {
-    toast.add({
-      severity: 'warn',
-      summary: 'هشدار',
-      detail: 'الگوی عنوان الزامی است',
-      life: 3000,
-    })
-    return
-  }
-
-  if (form.value.mapping_type === 'unit' && !form.value.organizational_unit_id) {
-    toast.add({
-      severity: 'warn',
-      summary: 'هشدار',
-      detail: 'انتخاب واحد سازمانی الزامی است',
-      life: 3000,
-    })
-    return
-  }
-
-  saving.value = true
-  try {
-    const { data } = await api.post('/assessment/mappings', form.value)
-
-    // ✅ نمایش پیام مناسب بر اساس به‌روزرسانی یا ایجاد
-    if (data.updated) {
-      toast.add({
-        severity: 'success',
-        summary: 'به‌روزرسانی شد',
-        detail: 'نگاشت قبلی با موفقیت به‌روزرسانی شد',
-        life: 3000,
-      })
-    } else {
-      toast.add({
-        severity: 'success',
-        summary: 'موفق',
-        detail: 'نگاشت با موفقیت ایجاد شد',
-        life: 3000,
-      })
-    }
-
-    closeCreateDialog()
-    await loadData()
-  } catch (e) {
-    toast.add({
-      severity: 'error',
-      summary: 'خطا',
-      detail: e.response?.data?.message || 'خطا در ذخیره نگاشت',
-      life: 5000,
-    })
-  } finally {
-    saving.value = false
-  }
-}
-
-async function assignEvaluator(position) {
-  if (!selectedEvaluators.value[position.user_id]) {
-    toast.add({ severity: 'warn', summary: 'هشدار', detail: 'لطفاً ارزیاب را انتخاب کنید', life: 3000 })
-    return
-  }
-  if (!selectedCycleId.value) {
-    toast.add({ severity: 'warn', summary: 'هشدار', detail: 'لطفاً چرخه ارزیابی را انتخاب کنید', life: 3000 })
-    return
-  }
-
-  assigning.value[position.user_id] = true
-  try {
-    await api.post('/assessment/mappings/assign-evaluator', {
-      cycle_id: selectedCycleId.value,
-      user_id: position.user_id,
-      evaluator_id: selectedEvaluators.value[position.user_id],
-    })
-    toast.add({ severity: 'success', summary: 'موفق', detail: `ارزیاب برای ${position.name} تعیین شد`, life: 3000 })
-    await loadNoEvaluator()
-  } catch (e) {
-    toast.add({ severity: 'error', summary: 'خطا', detail: e.response?.data?.message || 'خطا در تعیین ارزیاب', life: 5000 })
-  } finally {
-    assigning.value[position.user_id] = false
-  }
-}
-
-async function toggleMapping(mapping) {
-  try {
-    await api.put(`/assessment/mappings/${mapping.id}/toggle`)
-    toast.add({ severity: 'success', summary: 'موفق', detail: mapping.is_active ? 'نگاشت غیرفعال شد' : 'نگاشت فعال شد', life: 3000 })
-    await loadData()
-  } catch (e) {
-    toast.add({ severity: 'error', summary: 'خطا', detail: 'خطا در تغییر وضعیت', life: 3000 })
-  }
-}
-
-function confirmDelete(mapping) {
-  confirm.require({
-    message: `آیا از حذف این نگاشت اطمینان دارید؟`,
-    header: 'تایید حذف',
-    icon: 'pi pi-exclamation-triangle',
-    acceptLabel: 'بله، حذف شود',
-    rejectLabel: 'انصراف',
-    accept: async () => {
-      try {
-        await api.delete(`/assessment/mappings/${mapping.id}`)
-        toast.add({ severity: 'success', summary: 'موفق', detail: 'نگاشت حذف شد', life: 3000 })
-        await loadData()
-      } catch (e) {
-        toast.add({ severity: 'error', summary: 'خطا', detail: 'خطا در حذف', life: 3000 })
-      }
-    },
-  })
-}
-
-function getEvaluatorName(data, evaluatorId) {
-  const evaluator = data.suggested_evaluators?.find(e => e.id === evaluatorId)
-  return evaluator?.name || '—'
-}
-
-function closeCreateDialog() {
-  showCreateDialog.value = false
-  editingPosition.value = null
-  form.value = {
-    mapping_type: 'title_pattern',
-    post_title_pattern: '',
-    organizational_unit_id: null,
-    assessment_post_id: null,
-    description: '',
-  }
-}
 </script>
