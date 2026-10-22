@@ -1,55 +1,61 @@
 <template>
   <main class="auth-page" dir="rtl">
-    <!-- Background -->
+    <!-- ═════════════════════════════════════════════
+         BACKGROUND (هماهنگ با dashboard-hero)
+    ═════════════════════════════════════════════ -->
     <div class="auth-background" aria-hidden="true">
-      <div class="background-shape shape-one"></div>
-      <div class="background-shape shape-two"></div>
-      <div class="background-grid"></div>
+      <div class="auth-decoration auth-decoration-one"></div>
+      <div class="auth-decoration auth-decoration-two"></div>
+      <div class="auth-decoration auth-decoration-three"></div>
     </div>
 
     <section class="auth-shell">
       <div class="auth-card">
-
-        <!-- Header -->
+        <!-- ═════════════════════════════════════════════
+             HEADER
+        ═════════════════════════════════════════════ -->
         <header class="auth-header">
-          <div class="brand-mark" aria-hidden="true">
-            <i class="pi pi-building"></i>
+          <div class="brand-logo-wrapper">
+            <img
+                src="/images/ghettarabar-logo-light.png"
+                alt="لوگوی شرکت گهرترابر"
+                class="brand-logo"
+            />
           </div>
 
-          <div class="mt-5">
-            <h1 class="auth-title">
-              سیستم یکپارچه گهرترابر
-            </h1>
-
+          <div class="mt-5 text-center">
+            <div class="flex items-center justify-center gap-2 mb-2">
+              <span class="auth-status"></span>
+              <span class="text-xs text-slate-500">سامانه فعال است</span>
+            </div>
+            <h1 class="auth-title">سیستم یکپارچه گهرترابر</h1>
             <p class="auth-subtitle">
               برای ورود به حساب کاربری خود، اطلاعات زیر را وارد کنید.
             </p>
           </div>
         </header>
 
-        <!-- Reset Success -->
-        <transition name="message">
+        <!-- ═════════════════════════════════════════════
+             RESET SUCCESS ALERT
+        ═════════════════════════════════════════════ -->
+        <transition name="auth-fade">
           <div
               v-if="resetSuccess"
-              class="success-alert"
+              class="auth-alert auth-alert-success"
               role="status"
           >
-            <div class="alert-icon">
+            <div class="auth-alert-icon">
               <i class="pi pi-check"></i>
             </div>
-
-            <div class="min-w-0">
-              <p class="font-semibold text-sm">
-                رمز عبور با موفقیت تغییر کرد.
-              </p>
+            <div class="min-w-0 flex-1">
+              <p class="font-semibold text-sm">رمز عبور با موفقیت تغییر کرد.</p>
               <p class="text-xs mt-1 opacity-80">
                 اکنون می‌توانید با رمز جدید وارد سامانه شوید.
               </p>
             </div>
-
             <button
                 type="button"
-                class="alert-close"
+                class="auth-alert-close"
                 aria-label="بستن پیام"
                 @click="resetSuccess = false"
             >
@@ -58,29 +64,21 @@
           </div>
         </transition>
 
-        <!-- Form -->
-        <form
-            class="auth-form"
-            autocomplete="on"
-            @submit.prevent="handleLogin"
-        >
-
+        <!-- ═════════════════════════════════════════════
+             FORM
+        ═════════════════════════════════════════════ -->
+        <form class="auth-form" autocomplete="on" @submit.prevent="handleLogin">
           <!-- Mobile -->
-          <div class="field-group">
-            <label
-                for="mobile"
-                class="field-label"
-            >
+          <div class="auth-field">
+            <label for="mobile" class="auth-label">
               شماره موبایل
-              <span class="required">*</span>
+              <span class="text-rose-500 mr-0.5">*</span>
             </label>
-
             <div
-                class="input-wrapper"
-                :class="{ 'input-error': mobileError }"
+                class="auth-input-wrapper"
+                :class="{ 'auth-input-error': mobileError }"
             >
-              <i class="pi pi-mobile input-icon"></i>
-
+              <i class="pi pi-mobile auth-input-icon"></i>
               <InputText
                   id="mobile"
                   v-model="mobile"
@@ -90,50 +88,38 @@
                   dir="ltr"
                   maxlength="11"
                   placeholder="09123456789"
-                  class="auth-input mobile-input"
+                  class="auth-input"
                   :invalid="!!mobileError"
                   @input="normalizeMobile"
               />
             </div>
-
-            <transition name="message">
-              <small
-                  v-if="mobileError"
-                  class="field-error"
-              >
+            <transition name="auth-fade">
+              <small v-if="mobileError" class="auth-field-error">
                 <i class="pi pi-exclamation-circle"></i>
                 {{ mobileError }}
               </small>
             </transition>
-
-            <small
-                v-if="!mobileError"
-                class="field-hint"
-            >
+            <small v-if="!mobileError" class="auth-field-hint">
               شماره موبایل ثبت‌شده در سامانه را وارد کنید.
             </small>
           </div>
 
           <!-- Password -->
-          <div class="field-group">
+          <div class="auth-field">
             <div class="flex items-center justify-between mb-2">
-              <label
-                  for="password"
-                  class="field-label mb-0"
-              >
+              <label for="password" class="auth-label mb-0">
                 رمز عبور
-                <span class="required">*</span>
+                <span class="text-rose-500 mr-0.5">*</span>
               </label>
             </div>
-
             <div
-                class="password-wrapper"
+                class="auth-input-wrapper"
                 :class="{
-                'password-error': errorMessage,
-                'password-highlight': shouldHighlightPassword
+                'auth-input-error': errorMessage,
+                'auth-input-highlight': shouldHighlightPassword
               }"
             >
-              <i class="pi pi-lock input-icon"></i>
+              <i class="pi pi-lock auth-input-icon"></i>
               <Password
                   ref="passwordRef"
                   id="password"
@@ -141,19 +127,14 @@
                   :feedback="false"
                   toggleMask
                   autocomplete="current-password"
-                  inputClass="auth-password-input"
+                  inputClass="auth-input auth-password-input"
                   class="w-full"
                   :invalid="!!errorMessage"
                   fluid
               />
-
             </div>
-
-            <transition name="message">
-              <div
-                  v-if="shouldHighlightPassword"
-                  class="password-hint"
-              >
+            <transition name="auth-fade">
+              <div v-if="shouldHighlightPassword" class="auth-info-hint">
                 <i class="pi pi-info-circle"></i>
                 <span>رمز عبور جدید خود را وارد کنید.</span>
               </div>
@@ -161,24 +142,21 @@
           </div>
 
           <!-- Captcha -->
-          <transition name="captcha">
-            <div
-                v-if="requireCaptcha"
-                class="captcha-box"
-            >
-              <div class="captcha-header">
-                <div>
-                  <p class="captcha-title">
-                    تأیید امنیتی
-                  </p>
-                  <p class="captcha-description">
-                    کد داخل تصویر را وارد کنید.
-                  </p>
+          <transition name="auth-slide">
+            <div v-if="requireCaptcha" class="auth-captcha">
+              <div class="auth-captcha-header">
+                <div class="flex items-center gap-2">
+                  <div class="auth-captcha-icon">
+                    <i class="pi pi-shield"></i>
+                  </div>
+                  <div>
+                    <p class="auth-captcha-title">تأیید امنیتی</p>
+                    <p class="auth-captcha-desc">کد داخل تصویر را وارد کنید.</p>
+                  </div>
                 </div>
-
                 <button
                     type="button"
-                    class="captcha-refresh"
+                    class="auth-captcha-refresh"
                     title="تصویر جدید"
                     aria-label="دریافت تصویر امنیتی جدید"
                     :disabled="loading"
@@ -187,11 +165,10 @@
                   <i class="pi pi-refresh"></i>
                 </button>
               </div>
-
-              <div class="captcha-content">
+              <div class="auth-captcha-content">
                 <button
                     type="button"
-                    class="captcha-image-button"
+                    class="auth-captcha-image-btn"
                     :disabled="loading"
                     @click="fetchCaptcha"
                 >
@@ -199,24 +176,19 @@
                       v-if="captchaImg"
                       :src="captchaImg"
                       alt="کد امنیتی"
-                      class="captcha-image"
+                      class="auth-captcha-image"
                   />
-
-                  <div
-                      v-else
-                      class="captcha-loading"
-                  >
+                  <div v-else class="auth-captcha-loading">
                     <i class="pi pi-spin pi-spinner"></i>
                   </div>
                 </button>
-
                 <InputText
                     v-model="captchaInput"
                     inputmode="numeric"
                     autocomplete="off"
                     maxlength="10"
                     placeholder="کد امنیتی"
-                    class="captcha-input"
+                    class="auth-input auth-captcha-input"
                     :disabled="loading"
                 />
               </div>
@@ -224,24 +196,16 @@
           </transition>
 
           <!-- Error -->
-          <transition name="message">
-            <div
-                v-if="errorMessage"
-                class="error-alert"
-                role="alert"
-            >
+          <transition name="auth-fade">
+            <div v-if="errorMessage" class="auth-alert auth-alert-error" role="alert">
               <i class="pi pi-exclamation-triangle"></i>
-
               <span>{{ errorMessage }}</span>
             </div>
           </transition>
 
           <!-- Forgot Password -->
-          <div class="forgot-row">
-            <router-link
-                to="/forgot-password"
-                class="forgot-link"
-            >
+          <div class="auth-forgot-row">
+            <router-link to="/forgot-password" class="auth-forgot-link">
               <i class="pi pi-key"></i>
               <span>رمز عبور خود را فراموش کرده‌اید؟</span>
             </router-link>
@@ -250,45 +214,30 @@
           <!-- Submit -->
           <Button
               type="submit"
-              class="login-button"
+              class="auth-submit"
               :loading="loading"
               :disabled="loading"
           >
             <template #default>
-              <span v-if="!loading">
-                ورود به سامانه
-              </span>
-
-              <span v-else>
-                در حال ورود...
-              </span>
-
-              <i
-                  v-if="!loading"
-                  class="pi pi-arrow-left mr-2"
-              ></i>
+              <span v-if="!loading">ورود به سامانه</span>
+              <span v-else>در حال ورود...</span>
+              <i v-if="!loading" class="pi pi-arrow-left mr-2"></i>
             </template>
           </Button>
-
         </form>
 
-        <!-- Footer -->
+        <!-- ═════════════════════════════════════════════
+             FOOTER
+        ═════════════════════════════════════════════ -->
         <footer class="auth-footer">
-          <div class="footer-divider">
+          <div class="auth-footer-divider">
             <span></span>
             <i class="pi pi-shield"></i>
             <span></span>
           </div>
-
-          <p>
-            دسترسی شما به سامانه به‌صورت امن مدیریت می‌شود.
-          </p>
-
-          <p class="footer-brand">
-            سیستم یکپارچه گهرترابر
-          </p>
+          <p>دسترسی شما به سامانه به‌صورت امن مدیریت می‌شود.</p>
+          <p class="auth-footer-brand">سیستم یکپارچه گهرترابر</p>
         </footer>
-
       </div>
     </section>
   </main>
@@ -304,121 +253,95 @@ import Button from 'primevue/button'
 import axios from 'axios'
 import { useApiErrorHandler } from '@/composables/useApiErrorHandler'
 
-/* -------------------------------------------------------
- * Router / Store
- * ----------------------------------------------------- */
-
+/* ═════════════════════════════════════════════
+   Router / Store
+═════════════════════════════════════════════ */
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-
 const { handleApiError } = useApiErrorHandler()
 
-/* -------------------------------------------------------
- * Config
- * ----------------------------------------------------- */
-
+/* ═════════════════════════════════════════════
+   Config
+═════════════════════════════════════════════ */
 const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL ||
     'https://apiomrani.gttmco.ir/api/v1'
 
-/* -------------------------------------------------------
- * Form State
- * ----------------------------------------------------- */
-
+/* ═════════════════════════════════════════════
+   Form State
+═════════════════════════════════════════════ */
 const mobile = ref('')
 const password = ref('')
-
 const mobileError = ref('')
 const errorMessage = ref('')
-const successMessage = ref('')
-
 const loading = ref(false)
-
 const passwordRef = ref(null)
 
-/* -------------------------------------------------------
- * Reset Password State
- * ----------------------------------------------------- */
-
+/* ═════════════════════════════════════════════
+   Reset Password State
+═════════════════════════════════════════════ */
 const resetSuccess = ref(false)
 const shouldHighlightPassword = ref(false)
 
-/* -------------------------------------------------------
- * Captcha
- * ----------------------------------------------------- */
-
+/* ═════════════════════════════════════════════
+   Captcha
+═════════════════════════════════════════════ */
 const requireCaptcha = ref(false)
 const captchaImg = ref('')
 const captchaKey = ref('')
 const captchaInput = ref('')
 
-/* -------------------------------------------------------
- * Mobile Normalization
- * ----------------------------------------------------- */
-
+/* ═════════════════════════════════════════════
+   Mobile Normalization
+═════════════════════════════════════════════ */
 const normalizeMobile = () => {
   mobile.value = mobile.value
       .replace(/[۰-۹]/g, digit => '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit))
       .replace(/\D/g, '')
       .slice(0, 11)
 
-  if (mobileError.value) {
-    validateMobile()
-  }
+  if (mobileError.value) validateMobile()
 }
 
-/* -------------------------------------------------------
- * Validation
- * ----------------------------------------------------- */
-
+/* ═════════════════════════════════════════════
+   Validation
+═════════════════════════════════════════════ */
 const validateMobile = () => {
   if (!mobile.value) {
     mobileError.value = 'شماره موبایل را وارد کنید.'
     return false
   }
-
   if (!/^09\d{9}$/.test(mobile.value)) {
     mobileError.value = 'شماره موبایل باید با 09 شروع شده و 11 رقم باشد.'
     return false
   }
-
   mobileError.value = ''
   return true
 }
 
-/* -------------------------------------------------------
- * Captcha
- * ----------------------------------------------------- */
-
+/* ═════════════════════════════════════════════
+   Captcha
+═════════════════════════════════════════════ */
 const fetchCaptcha = async () => {
   try {
-    const response = await axios.get(
-        `${API_BASE_URL}/auth/captcha`
-    )
-
+    const response = await axios.get(`${API_BASE_URL}/auth/captcha`)
     captchaImg.value = response.data.img
     captchaKey.value = response.data.key
     captchaInput.value = ''
   } catch (error) {
     console.error('خطا در دریافت کپچا:', error)
-
-    errorMessage.value =
-        'دریافت تصویر امنیتی با خطا مواجه شد. دوباره تلاش کنید.'
+    errorMessage.value = 'دریافت تصویر امنیتی با خطا مواجه شد. دوباره تلاش کنید.'
   }
 }
 
-/* -------------------------------------------------------
- * Login
- * ----------------------------------------------------- */
-
+/* ═════════════════════════════════════════════
+   Login
+═════════════════════════════════════════════ */
 const handleLogin = async () => {
   errorMessage.value = ''
-  successMessage.value = ''
 
-  if (!validateMobile()) {
-    return
-  }
+  if (!validateMobile()) return
 
   if (!password.value) {
     errorMessage.value = 'رمز عبور را وارد کنید.'
@@ -445,14 +368,10 @@ const handleLogin = async () => {
     }
 
     await authStore.login(payload)
-
-    router.push({
-      name: 'Dashboard'
-    })
-
+    router.push({ name: 'Dashboard' })
   } catch (error) {
     handleApiError(error, {
-      setErrors: (validationErrors) => {
+      setErrors: validationErrors => {
         errorMessage.value = validationErrors
       }
     })
@@ -460,27 +379,20 @@ const handleLogin = async () => {
     if (error.response?.status === 429) {
       requireCaptcha.value = true
       await fetchCaptcha()
-    } else if (
-        error.response?.status === 400 &&
-        requireCaptcha.value
-    ) {
+    } else if (error.response?.status === 400 && requireCaptcha.value) {
       await fetchCaptcha()
     }
-
   } finally {
     loading.value = false
   }
 }
 
-/* -------------------------------------------------------
- * Password Focus
- * ----------------------------------------------------- */
-
+/* ═════════════════════════════════════════════
+   Password Focus
+═════════════════════════════════════════════ */
 const focusOnPassword = () => {
   nextTick(() => {
-    const inputElement =
-        passwordRef.value?.$el?.querySelector('input')
-
+    const inputElement = passwordRef.value?.$el?.querySelector('input')
     if (inputElement) {
       inputElement.focus()
       inputElement.select()
@@ -488,655 +400,467 @@ const focusOnPassword = () => {
   })
 }
 
-/* -------------------------------------------------------
- * Mounted
- * ----------------------------------------------------- */
-
+/* ═════════════════════════════════════════════
+   Mounted
+═════════════════════════════════════════════ */
 onMounted(() => {
   const queryMobile = route.query.mobile
   const isFromReset = route.query.reset === 'success'
 
-  if (queryMobile) {
-    mobile.value = String(queryMobile)
-  }
+  if (queryMobile) mobile.value = String(queryMobile)
 
   if (isFromReset) {
     resetSuccess.value = true
     shouldHighlightPassword.value = true
 
     nextTick(() => {
-      setTimeout(() => {
-        focusOnPassword()
-      }, 350)
+      setTimeout(() => focusOnPassword(), 350)
     })
 
-    router.replace({
-      path: '/login'
-    })
-
-    setTimeout(() => {
-      shouldHighlightPassword.value = false
-    }, 5000)
+    router.replace({ path: '/login' })
+    setTimeout(() => (shouldHighlightPassword.value = false), 5000)
   }
 })
 
-/* -------------------------------------------------------
- * Watchers
- * ----------------------------------------------------- */
-
+/* ═════════════════════════════════════════════
+   Watchers
+═════════════════════════════════════════════ */
 watch(mobile, () => {
-  if (shouldHighlightPassword.value) {
-    shouldHighlightPassword.value = false
-  }
-
-  if (mobileError.value) {
-    validateMobile()
-  }
+  if (shouldHighlightPassword.value) shouldHighlightPassword.value = false
+  if (mobileError.value) validateMobile()
 })
 </script>
 
 <style scoped>
-/* =====================================================
-   Page
-===================================================== */
-
+/* ═════════════════════════════════════════════
+   PAGE (هماهنگ با dashboard-page)
+═════════════════════════════════════════════ */
 .auth-page {
-  position: relative;
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 20px;
-  overflow: hidden;
-  background:
-      radial-gradient(
-          circle at 10% 10%,
-          rgba(59, 130, 246, 0.08),
-          transparent 30%
-      ),
-      radial-gradient(
-          circle at 90% 90%,
-          rgba(16, 185, 129, 0.07),
-          transparent 30%
-      ),
-      #f8fafc;
+  @apply relative min-h-[100dvh] flex items-center justify-center
+  overflow-hidden py-8 px-5;
+  background: linear-gradient(
+      135deg,
+      rgb(238 242 255),
+      rgb(248 250 252) 55%,
+      rgb(245 243 255)
+  );
+  animation: auth-enter 0.45s ease-out;
 }
 
-/* =====================================================
-   Background
-===================================================== */
-
+/* ═════════════════════════════════════════════
+   BACKGROUND DECORATIONS (مشابه hero-decoration)
+═════════════════════════════════════════════ */
 .auth-background {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
+  @apply absolute inset-0 pointer-events-none overflow-hidden;
 }
 
-.background-shape {
-  position: absolute;
-  border-radius: 999px;
-  filter: blur(70px);
+.auth-decoration {
+  @apply absolute rounded-full pointer-events-none;
+  filter: blur(60px);
 }
 
-.shape-one {
-  width: 320px;
-  height: 320px;
-  top: -160px;
-  right: -100px;
-  background: rgba(59, 130, 246, 0.10);
-}
-
-.shape-two {
+.auth-decoration-one {
   width: 280px;
   height: 280px;
-  bottom: -150px;
+  background: rgb(129 140 248 / 14%);
+  top: -120px;
   left: -80px;
-  background: rgba(16, 185, 129, 0.08);
 }
 
-.background-grid {
-  position: absolute;
-  inset: 0;
-  opacity: 0.25;
-  background-image:
-      linear-gradient(
-          rgba(148, 163, 184, 0.08) 1px,
-          transparent 1px
-      ),
-      linear-gradient(
-          90deg,
-          rgba(148, 163, 184, 0.08) 1px,
-          transparent 1px
-      );
-  background-size: 32px 32px;
+.auth-decoration-two {
+  width: 240px;
+  height: 240px;
+  background: rgb(167 139 250 / 14%);
+  bottom: -110px;
+  right: -70px;
 }
 
-/* =====================================================
-   Shell / Card
-===================================================== */
+.auth-decoration-three {
+  width: 180px;
+  height: 180px;
+  background: rgb(99 102 241 / 10%);
+  top: 40%;
+  right: 20%;
+}
 
+/* ═════════════════════════════════════════════
+   SHELL / CARD (مشابه dashboard-card)
+═════════════════════════════════════════════ */
 .auth-shell {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 470px;
+  @apply relative z-10 w-full max-w-[470px];
 }
 
 .auth-card {
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 24px;
+  @apply bg-white rounded-3xl overflow-hidden
+  border border-slate-200/70;
   box-shadow:
-      0 20px 50px rgba(15, 23, 42, 0.08),
-      0 4px 12px rgba(15, 23, 42, 0.04);
-  overflow: hidden;
+      0 20px 50px rgb(79 70 229 / 8%),
+      0 4px 12px rgb(15 23 42 / 4%);
 }
 
-/* =====================================================
-   Header
-===================================================== */
-
+/* ═════════════════════════════════════════════
+   HEADER
+═════════════════════════════════════════════ */
 .auth-header {
-  padding: 38px 36px 30px;
-  text-align: center;
+  @apply px-9 pt-9 pb-6 text-center;
 }
 
-.brand-mark {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 18px;
-  background: linear-gradient(
-      145deg,
-      #2563eb,
-      #1d4ed8
-  );
-  color: #fff;
-  font-size: 25px;
-  box-shadow:
-      0 12px 25px rgba(37, 99, 235, 0.22);
+.brand-logo-wrapper {
+  @apply mx-auto flex items-center justify-center
+  w-[220px] h-[120px];
+}
+
+.brand-logo {
+  @apply w-full h-full object-contain;
+}
+
+.auth-status {
+  @apply w-2 h-2 rounded-full bg-emerald-500;
+  box-shadow: 0 0 0 4px rgb(16 185 129 / 10%);
 }
 
 .auth-title {
-  margin: 0;
-  color: #0f172a;
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1.5;
+  @apply text-2xl font-bold text-slate-800 tracking-tight;
 }
 
 .auth-subtitle {
-  margin: 8px auto 0;
-  max-width: 340px;
-  color: #64748b;
-  font-size: 13px;
-  line-height: 1.9;
+  @apply text-sm text-slate-500 mt-2 max-w-sm mx-auto;
 }
 
-/* =====================================================
-   Form
-===================================================== */
-
+/* ═════════════════════════════════════════════
+   FORM
+═════════════════════════════════════════════ */
 .auth-form {
-  padding: 0 36px 28px;
+  @apply px-9 pb-7;
 }
 
-.field-group {
-  margin-bottom: 20px;
+.auth-field {
+  @apply mb-5;
 }
 
-.field-label {
-  display: block;
-  margin-bottom: 8px;
-  color: #334155;
-  font-size: 13px;
-  font-weight: 700;
+.auth-label {
+  @apply block mb-2 text-sm font-bold text-slate-700;
 }
 
-.required {
-  color: #ef4444;
-  margin-right: 2px;
+.auth-input-wrapper {
+  @apply relative;
 }
 
-.input-wrapper,
-.password-wrapper {
-  position: relative;
+.auth-input-icon {
+  @apply absolute z-10 top-1/2 right-3.5 -translate-y-1/2
+  text-slate-400 pointer-events-none
+  transition-colors;
 }
 
-.input-icon {
-  position: absolute;
-  z-index: 2;
-  top: 50%;
-  right: 14px;
-  transform: translateY(-50%);
-  color: #94a3b8;
-  pointer-events: none;
-  transition: color 0.2s ease;
-}
-
-.auth-input,
-.auth-password-input {
-  width: 100% !important;
-  min-height: 48px;
-  border: 1px solid #dbe3ed !important;
-  border-radius: 12px !important;
-  background: #fff !important;
-  color: #0f172a !important;
-  font-size: 14px !important;
-  box-shadow: none !important;
-  transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease,
-      background-color 0.2s ease !important;
+.auth-input-wrapper:focus-within .auth-input-icon {
+  @apply text-indigo-600;
 }
 
 .auth-input {
-  padding-right: 42px !important;
+  @apply w-full min-h-[48px] px-3 py-2.5
+  bg-white border border-slate-200 rounded-xl
+  text-slate-800 text-sm
+  transition-all duration-200 !important;
 }
 
-.mobile-input {
-  text-align: left;
+.auth-input:hover {
+  @apply border-slate-300 !important;
 }
 
-.auth-input:hover,
-.auth-password-input:hover {
-  border-color: #b9c5d4 !important;
+.auth-input:focus {
+  @apply border-indigo-500 outline-none !important;
+  box-shadow: 0 0 0 3px rgb(99 102 241 / 12%) !important;
 }
 
-.auth-input:focus,
-.auth-password-input:focus {
-  border-color: #3b82f6 !important;
-  box-shadow:
-      0 0 0 3px rgba(59, 130, 246, 0.10) !important;
+.auth-input::placeholder {
+  @apply text-slate-400 !important;
 }
 
-.input-wrapper:focus-within .input-icon,
-.password-wrapper:focus-within .input-icon {
-  color: #2563eb;
+.auth-password-input {
+  @apply pr-10 pl-11 !important;
 }
 
-.field-hint {
-  display: block;
-  margin-top: 6px;
-  color: #94a3b8;
-  font-size: 11px;
+.auth-input-error .auth-input {
+  @apply border-rose-400 !important;
 }
 
-.field-error {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 7px;
-  color: #dc2626;
-  font-size: 11px;
+.auth-input-error .auth-input:focus {
+  box-shadow: 0 0 0 3px rgb(244 63 94 / 12%) !important;
 }
 
-.input-error .auth-input {
-  border-color: #ef4444 !important;
+.auth-input-highlight .auth-input {
+  @apply border-indigo-500 !important;
+  box-shadow: 0 0 0 4px rgb(99 102 241 / 15%) !important;
 }
 
-.password-error .auth-password-input {
-  border-color: #ef4444 !important;
+.auth-field-hint {
+  @apply block mt-1.5 text-[11px] text-slate-400;
 }
 
-/* =====================================================
-   Password
-===================================================== */
-
-.password-wrapper .p-password {
-  width: 100%;
-  display: block;
+.auth-field-error {
+  @apply flex items-center gap-1 mt-1.5
+  text-[11px] text-rose-600;
 }
 
-.password-wrapper .auth-password-input {
-  padding-right: 42px !important;
-  padding-left: 45px !important;
+.auth-info-hint {
+  @apply flex items-center gap-1.5 mt-2
+  text-[11px] text-indigo-600;
 }
 
-.password-highlight .auth-password-input {
-  border-color: #2563eb !important;
-  box-shadow:
-      0 0 0 4px rgba(37, 99, 235, 0.10) !important;
+/* ═════════════════════════════════════════════
+   CAPTCHA
+═════════════════════════════════════════════ */
+.auth-captcha {
+  @apply mb-5 p-4 rounded-2xl
+  bg-gradient-to-br from-indigo-50/60 to-white
+  border border-indigo-100/70;
 }
 
-.password-hint {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 8px;
-  color: #2563eb;
-  font-size: 11px;
+.auth-captcha-header {
+  @apply flex items-center justify-between gap-3 mb-3;
 }
 
-/* =====================================================
-   Captcha
-===================================================== */
-
-.captcha-box {
-  margin-bottom: 20px;
-  padding: 15px;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  background: #f8fafc;
+.auth-captcha-icon {
+  @apply w-9 h-9 rounded-xl
+  bg-indigo-100 border border-indigo-200
+  flex items-center justify-center
+  text-indigo-600;
 }
 
-.captcha-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+.auth-captcha-title {
+  @apply text-xs font-bold text-slate-700;
 }
 
-.captcha-title {
-  margin: 0;
-  color: #334155;
-  font-size: 12px;
-  font-weight: 700;
+.auth-captcha-desc {
+  @apply text-[10px] text-slate-500 mt-0.5;
 }
 
-.captcha-description {
-  margin: 3px 0 0;
-  color: #94a3b8;
-  font-size: 10px;
+.auth-captcha-refresh {
+  @apply w-9 h-9 flex items-center justify-center
+  rounded-xl border border-slate-200
+  bg-white text-slate-500
+  transition-all duration-200
+  hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50;
 }
 
-.captcha-refresh {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #dbe3ed;
-  border-radius: 9px;
-  background: #fff;
-  color: #475569;
-  cursor: pointer;
-  transition: 0.2s ease;
+.auth-captcha-content {
+  @apply flex items-stretch gap-2.5;
 }
 
-.captcha-refresh:hover {
-  color: #2563eb;
-  border-color: #bfdbfe;
-  background: #eff6ff;
+.auth-captcha-image-btn {
+  @apply w-[145px] min-w-[145px] h-12 overflow-hidden
+  rounded-xl border border-slate-200 bg-white
+  cursor-pointer transition-all
+  hover:border-indigo-300;
 }
 
-.captcha-content {
-  display: flex;
-  align-items: stretch;
-  gap: 10px;
+.auth-captcha-image {
+  @apply w-full h-full object-contain;
 }
 
-.captcha-image-button {
-  width: 145px;
-  min-width: 145px;
-  height: 48px;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid #dbe3ed;
-  border-radius: 10px;
-  background: #fff;
-  cursor: pointer;
+.auth-captcha-loading {
+  @apply h-full flex items-center justify-center text-slate-400;
 }
 
-.captcha-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+.auth-captcha-input {
+  @apply flex-1 text-center !important;
 }
 
-.captcha-loading {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #94a3b8;
+/* ═════════════════════════════════════════════
+   ALERTS
+═════════════════════════════════════════════ */
+.auth-alert {
+  @apply flex items-center gap-2.5
+  rounded-xl text-xs px-3.5 py-3 mb-4;
 }
 
-.captcha-input {
-  width: 100%;
-  min-height: 48px;
-  text-align: center;
-  border-radius: 10px !important;
+.auth-alert-error {
+  @apply bg-rose-50 border border-rose-100 text-rose-700;
 }
 
-/* =====================================================
-   Alerts
-===================================================== */
-
-.error-alert,
-.success-alert {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-radius: 12px;
-  font-size: 12px;
+.auth-alert-success {
+  @apply mx-9 mb-5 bg-emerald-50 border border-emerald-100 text-emerald-700;
 }
 
-.error-alert {
-  margin-bottom: 16px;
-  padding: 12px 14px;
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #b91c1c;
+.auth-alert-icon {
+  @apply w-8 h-8 min-w-[32px] rounded-lg
+  bg-emerald-100 flex items-center justify-center
+  text-emerald-600;
 }
 
-.success-alert {
-  margin: 0 36px 22px;
-  padding: 13px 14px;
-  border: 1px solid #bbf7d0;
-  background: #f0fdf4;
-  color: #166534;
+.auth-alert-close {
+  @apply mr-auto text-emerald-400 transition-colors
+  hover:text-emerald-700;
 }
 
-.alert-icon {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9px;
-  background: #dcfce7;
+/* ═════════════════════════════════════════════
+   FORGOT PASSWORD
+═════════════════════════════════════════════ */
+.auth-forgot-row {
+  @apply flex justify-start my-0.5 mb-4;
 }
 
-.alert-close {
-  margin-right: auto;
-  color: #86efac;
-  cursor: pointer;
+.auth-forgot-link {
+  @apply inline-flex items-center gap-1.5
+  text-xs font-semibold text-indigo-600
+  transition-colors
+  hover:text-indigo-700 hover:underline;
 }
 
-.alert-close:hover {
-  color: #166534;
+/* ═════════════════════════════════════════════
+   SUBMIT BUTTON (هماهنگ با Dashboard)
+═════════════════════════════════════════════ */
+.auth-submit {
+  @apply w-full min-h-[50px]
+  rounded-xl border-0
+  text-white text-sm font-bold
+  transition-all duration-200 !important;
+  background: linear-gradient(120deg, #6366f1, #8b5cf6) !important;
+  box-shadow: 0 8px 20px rgb(99 102 241 / 25%) !important;
 }
 
-/* =====================================================
-   Forgot
-===================================================== */
-
-.forgot-row {
-  display: flex;
-  justify-content: flex-start;
-  margin: 2px 0 18px;
-}
-
-.forgot-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.forgot-link:hover {
-  color: #1d4ed8;
-  text-decoration: underline;
-}
-
-/* =====================================================
-   Login Button
-===================================================== */
-
-.login-button {
-  width: 100%;
-  min-height: 50px;
-  border: 0 !important;
-  border-radius: 12px !important;
-  background: #2563eb !important;
-  color: #fff !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
-  box-shadow:
-      0 8px 18px rgba(37, 99, 235, 0.20) !important;
-  transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease,
-      background-color 0.2s ease !important;
-}
-
-.login-button:hover:not(:disabled) {
-  background: #1d4ed8 !important;
+.auth-submit:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow:
-      0 10px 22px rgba(37, 99, 235, 0.25) !important;
+  background: linear-gradient(120deg, #4f46e5, #7c3aed) !important;
+  box-shadow: 0 12px 26px rgb(99 102 241 / 32%) !important;
 }
 
-.login-button:active:not(:disabled) {
+.auth-submit:active:not(:disabled) {
   transform: translateY(0);
 }
 
-/* =====================================================
-   Footer
-===================================================== */
-
+/* ═════════════════════════════════════════════
+   FOOTER
+═════════════════════════════════════════════ */
 .auth-footer {
-  padding: 0 36px 30px;
-  text-align: center;
-  color: #94a3b8;
-  font-size: 10px;
-  line-height: 1.8;
+  @apply px-9 pb-7 text-center text-[10px] leading-relaxed text-slate-400;
 }
 
-.footer-divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+.auth-footer-divider {
+  @apply flex items-center gap-2.5 mb-2.5;
 }
 
-.footer-divider span {
-  height: 1px;
-  flex: 1;
-  background: #e2e8f0;
+.auth-footer-divider span {
+  @apply h-px flex-1 bg-slate-200;
 }
 
-.footer-divider i {
-  color: #94a3b8;
-  font-size: 11px;
+.auth-footer-divider i {
+  @apply text-slate-400 text-[11px];
 }
 
-.footer-brand {
-  margin-top: 2px;
-  color: #64748b;
-  font-weight: 600;
+.auth-footer-brand {
+  @apply mt-0.5 text-slate-600 font-semibold;
 }
 
-/* =====================================================
-   Transitions
-===================================================== */
-
-.message-enter-active,
-.message-leave-active,
-.captcha-enter-active,
-.captcha-leave-active {
+/* ═════════════════════════════════════════════
+   TRANSITIONS
+═════════════════════════════════════════════ */
+.auth-fade-enter-active,
+.auth-fade-leave-active {
   transition: all 0.22s ease;
 }
 
-.message-enter-from,
-.message-leave-to,
-.captcha-enter-from,
-.captcha-leave-to {
+.auth-fade-enter-from,
+.auth-fade-leave-to {
   opacity: 0;
-  transform: translateY(-6px);
+  transform: translateY(-5px);
 }
 
-/* =====================================================
-   Responsive
-===================================================== */
+.auth-slide-enter-active,
+.auth-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
+.auth-slide-enter-from,
+.auth-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* ═════════════════════════════════════════════
+   ANIMATION
+═════════════════════════════════════════════ */
+@keyframes auth-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═════════════════════════════════════════════
+   RESPONSIVE
+═════════════════════════════════════════════ */
 @media (max-width: 640px) {
   .auth-page {
-    padding: 16px;
-    align-items: flex-start;
-    padding-top: 28px;
+    @apply items-start pt-7 px-4;
   }
 
   .auth-card {
-    border-radius: 20px;
+    @apply rounded-[22px];
   }
 
   .auth-header {
-    padding: 30px 22px 24px;
+    @apply px-5 pt-7 pb-5;
   }
 
   .auth-form {
-    padding: 0 22px 24px;
+    @apply px-5 pb-6;
   }
 
   .auth-footer {
-    padding: 0 22px 24px;
+    @apply px-5 pb-6;
   }
 
-  .success-alert {
-    margin-left: 22px;
-    margin-right: 22px;
+  .auth-alert-success {
+    @apply mx-5;
   }
 
   .auth-title {
-    font-size: 21px;
+    @apply text-xl;
   }
 
-  .captcha-content {
-    flex-direction: column;
+  .auth-captcha-content {
+    @apply flex-col;
   }
 
-  .captcha-image-button {
-    width: 100%;
+  .auth-captcha-image-btn {
+    @apply w-full;
+  }
+
+  .brand-logo-wrapper {
+    @apply w-[180px] h-[95px];
   }
 }
 
 @media (max-width: 380px) {
   .auth-page {
-    padding: 10px;
+    @apply py-2.5 px-2.5;
   }
 
   .auth-header {
-    padding: 26px 18px 20px;
+    @apply px-4 pt-6 pb-4;
   }
 
   .auth-form {
-    padding: 0 18px 22px;
+    @apply px-4 pb-5;
   }
 
   .auth-footer {
-    padding: 0 18px 22px;
+    @apply px-4 pb-5;
   }
 
-  .success-alert {
-    margin-left: 18px;
-    margin-right: 18px;
+  .auth-alert-success {
+    @apply mx-4;
   }
 }
 
-/* Respect reduced motion */
+/* ═════════════════════════════════════════════
+   REDUCED MOTION
+═════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1146,22 +870,4 @@ watch(mobile, () => {
     transition-duration: 0.01ms !important;
   }
 }
-
-.password-field {
-  position: relative;
-}
-
-.password-icon {
-  position: absolute;
-  inset-inline-start: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
-  pointer-events: none;
-}
-
-:deep(.auth-password-input) {
-  padding-inline-start: 3rem !important;
-}
 </style>
-

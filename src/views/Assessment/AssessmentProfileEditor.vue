@@ -3,6 +3,7 @@
     <!-- ═══════════════════════════════════════════
          Header  & Stats
     ════════════════════════════════════════════ -->
+
     <Card class="mb-6">
       <template #title>
         <div class="flex items-center justify-between">
@@ -23,11 +24,165 @@
               </p>
             </div>
           </div>
-          <Button
-              icon="pi pi-plus"
-              label="سوال جدید"
-              @click="openQuestionDialog()"
-          />
+<!--          <Button-->
+<!--              icon="pi pi-plus"-->
+<!--              label="سوال جدید"-->
+<!--              @click="openQuestionDialog()"-->
+<!--          />-->
+          <!-- در بخش Header، بعد از دکمه "سوال جدید" این دکمه‌ها رو اضافه کن -->
+          <div class="flex gap-2">
+            <!-- ✅ جدید: دکمه import از Template -->
+            <Button
+                v-if="!post?.template_id"
+                icon="pi pi-download"
+                label="Import از تمپلیت"
+                severity="help"
+                outlined
+                @click="openTemplateImportDialog"
+            />
+
+            <!-- ✅ جدید: دکمه sync با Template -->
+            <Button
+                v-if="post?.template_id && post?.template_outdated"
+                icon="pi pi-refresh"
+                label="Sync با تمپلیت"
+                severity="warn"
+                outlined
+                @click="confirmSyncWithTemplate"
+            />
+
+            <!-- ✅ جدید: نمایش اطلاعات Template -->
+            <Tag
+                v-if="post?.template_id"
+                :value="`تمپلیت v${post.template_version_used}`"
+                severity="info"
+                class="ml-2"
+            />
+
+            <Button
+                icon="pi pi-plus"
+                label="سوال جدید"
+                @click="openQuestionDialog()"
+            />
+          </div>
+
+          <!-- ═══════════════════════════════════════════
+               Dialog: Import از Template
+          ═══════════════════════════════════════════ -->
+          <Dialog
+              v-model:visible="showTemplateImportDialog"
+              header="Import سوالات از تمپلیت"
+              :style="{ width: '700px' }"
+              modal
+          >
+            <div class="space-y-4">
+              <div class="bg-blue-50 border-r-4 border-blue-400 p-3 rounded mb-4 text-sm text-blue-800">
+                <i class="pi pi-info-circle ml-2"></i>
+                تمپلیت‌های تایید شده برای خانواده شغلی <b>{{ post?.grade }}</b> نمایش داده می‌شوند.
+                سوالات عمومی از تمپلیت انتخابی import خواهند شد.
+              </div>
+
+              <div v-if="loadingTemplates" class="text-center py-8">
+                <i class="pi pi-spin pi-spinner text-4xl text-gray-400"></i>
+                <p class="text-gray-500 mt-2">در حال بارگذاری تمپلیت‌ها...</p>
+              </div>
+
+              <div v-else-if="availableTemplates.length === 0" class="text-center py-8">
+                <i class="pi pi-inbox text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500">
+                  تمپلیت تایید شده‌ای برای خانواده شغلی "{{ post?.grade }}" یافت نشد.
+                </p>
+              </div>
+
+              <div v-else class="space-y-3">
+                <div
+                    v-for="template in availableTemplates"
+                    :key="template.id"
+                    class="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                    :class="{ 'border-blue-500 bg-blue-50': selectedTemplate?.id === template.id }"
+                    @click="selectedTemplate = template"
+                >
+                  <div class="flex items-start justify-between mb-2">
+                    <div>
+                      <h4 class="font-bold text-gray-800">{{ template.title }}</h4>
+                      <p v-if="template.description" class="text-sm text-gray-600 mt-1">
+                        {{ template.description }}
+                      </p>
+                    </div>
+                    <Tag :value="`v${template.version}`" severity="info" />
+                  </div>
+                  <div class="flex gap-4 text-sm text-gray-600 mt-2">
+          <span>
+            <i class="pi pi-question-circle ml-1"></i>
+            {{ template.questions?.length || 0 }} سوال
+          </span>
+                    <span>
+            <i class="pi pi-calendar ml-1"></i>
+            {{ formatDate(template.approved_at) }}
+          </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <template #footer>
+              <Button
+                  label="انصراف"
+                  severity="secondary"
+                  @click="showTemplateImportDialog = false"
+              />
+              <Button
+                  label="Import سوالات"
+                  icon="pi pi-download"
+                  :disabled="!selectedTemplate"
+                  :loading="importingTemplate"
+                  @click="executeTemplateImport"
+              />
+            </template>
+          </Dialog>
+
+          <!-- ═══════════════════════════════════════════
+               Dialog: Sync با Template
+          ═══════════════════════════════════════════ -->
+          <Dialog
+              v-model:visible="showSyncDialog"
+              header="Sync با آخرین نسخه تمپلیت"
+              :style="{ width: '500px' }"
+              modal
+          >
+            <div class="bg-amber-50 border-r-4 border-amber-400 p-3 rounded mb-4 text-sm text-amber-800">
+              <i class="pi pi-exclamation-triangle ml-2"></i>
+              <div class="mt-2">
+                <p class="font-bold">تمپلیت نسخه جدیدتری دارد!</p>
+                <p class="mt-1">
+                  نسخه فعلی: <b>v{{ post?.template_version_used }}</b>
+                  <br />
+                  آخرین نسخه: <b>v{{ latestTemplateVersion }}</b>
+                </p>
+                <p class="mt-2 text-xs">
+                  با sync، سوالات جدید اضافه شده و سوالات موجود به‌روزرسانی می‌شوند.
+                  سوالات تخصصی که قبلاً اضافه کرده‌اید حفظ خواهند شد.
+                </p>
+              </div>
+            </div>
+
+            <template #footer>
+              <Button
+                  label="انصراف"
+                  severity="secondary"
+                  @click="showSyncDialog = false"
+              />
+              <Button
+                  label="Sync کن"
+                  icon="pi pi-refresh"
+                  severity="warn"
+                  :loading="syncing"
+                  @click="executeSync"
+              />
+            </template>
+          </Dialog>
+
+
         </div>
       </template>
       <template #content>
@@ -314,6 +469,142 @@ const questionForm = ref({
   risk_level: null,
   fix_deadline: null,
 })
+
+
+
+
+
+import templateService from '@/services/templateService'
+
+// ═══════════════════════════════════════════════
+// State جدید برای Template
+// ═══════════════════════════════════════════════
+const showTemplateImportDialog = ref(false)
+const showSyncDialog = ref(false)
+const availableTemplates = ref([])
+const selectedTemplate = ref(null)
+const loadingTemplates = ref(false)
+const importingTemplate = ref(false)
+const syncing = ref(false)
+const latestTemplateVersion = ref(null)
+
+// ═══════════════════════════════════════════════
+// Methods: Template Import
+// ═══════════════════════════════════════════════
+async function openTemplateImportDialog() {
+  showTemplateImportDialog.value = true
+  selectedTemplate.value = null
+  loadingTemplates.value = true
+
+  try {
+    const data = await templateService.getTemplates({
+      grade: post.value.grade,
+      approved: true,
+      is_active: true,
+    })
+    availableTemplates.value = data.templates || []
+  } catch (e) {
+    toast.add({
+      severity: 'error',
+      summary: 'خطا',
+      detail: 'خطا در دریافت تمپلیت‌ها',
+      life: 3000,
+    })
+  } finally {
+    loadingTemplates.value = false
+  }
+}
+
+async function executeTemplateImport() {
+  if (!selectedTemplate.value) return
+
+  importingTemplate.value = true
+  try {
+    const result = await templateService.importToPost(
+        selectedTemplate.value.id,
+        post.value.id
+    )
+
+    toast.add({
+      severity: 'success',
+      summary: 'موفق',
+      detail: `${result.result?.imported || 0} سوال از تمپلیت import شد`,
+      life: 4000,
+    })
+
+    showTemplateImportDialog.value = false
+    await loadData(post.value.id)
+  } catch (e) {
+    toast.add({
+      severity: 'error',
+      summary: 'خطا',
+      detail: e.response?.data?.message || 'خطا در import',
+      life: 3000,
+    })
+  } finally {
+    importingTemplate.value = false
+  }
+}
+
+// ═══════════════════════════════════════════════
+// Methods: Sync با Template
+// ═══════════════════════════════════════════════
+async function confirmSyncWithTemplate() {
+  showSyncDialog.value = true
+
+  try {
+    const template = await templateService.getTemplate(post.value.template_id)
+    latestTemplateVersion.value = template.template?.version
+  } catch (e) {
+    latestTemplateVersion.value = 'نامشخص'
+  }
+}
+
+async function executeSync() {
+  syncing.value = true
+  try {
+    const result = await templateService.syncPostWithTemplate(post.value.id)
+
+    toast.add({
+      severity: 'success',
+      summary: 'موفق',
+      detail: result.message || 'Sync با تمپلیت انجام شد',
+      life: 4000,
+    })
+
+    showSyncDialog.value = false
+    await loadData(post.value.id)
+  } catch (e) {
+    toast.add({
+      severity: 'error',
+      summary: 'خطا',
+      detail: e.response?.data?.message || 'خطا در sync',
+      life: 3000,
+    })
+  } finally {
+    syncing.value = false
+  }
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—'
+  try {
+    const d = new Date(dateStr)
+    return new Intl.DateTimeFormat('fa-IR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(d)
+  } catch {
+    return dateStr
+  }
+}
+
+
+
+
+
+
 
 // ═══════════════════════════════════════════════
 // Options

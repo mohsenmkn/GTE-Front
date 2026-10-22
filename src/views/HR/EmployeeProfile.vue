@@ -483,6 +483,118 @@
 
                 </div>
 
+
+                <!-- =============================================
+                     Education Information
+                ============================================== -->
+                <div class="info-card">
+
+                  <div class="info-card-header">
+
+                    <div class="section-icon bg-blue-50 text-blue-600">
+                      <i class="pi pi-graduation-cap"></i>
+                    </div>
+
+                    <div>
+                      <h3>اطلاعات تحصیلی</h3>
+                      <p>آخرین مدرک تحصیلی ثبت‌شده در سامانه منابع انسانی</p>
+                    </div>
+
+                  </div>
+
+                  <div class="info-list">
+
+                    <InfoRow
+                        label="مقطع تحصیلی"
+                        :value="employee.education?.degree || '—'"
+                    />
+
+                    <InfoRow
+                        label="رشته تحصیلی"
+                        :value="employee.education?.discipline || '—'"
+                    />
+
+                    <InfoRow
+                        label="گرایش / رشته تکمیلی"
+                        :value="employee.education?.major || '—'"
+                    />
+
+                    <InfoRow
+                        label="معدل"
+                        :value="employee.education?.gpa ?? '—'"
+                        dir="ltr"
+                    />
+
+                    <InfoRow
+                        label="تاریخ شروع تحصیل"
+                        :value="formatDate(employee.education?.start_date)"
+                    />
+
+                    <InfoRow
+                        label="تاریخ پایان تحصیل"
+                        :value="formatDate(employee.education?.end_date)"
+                    />
+
+                    <InfoRow
+                        label="تاریخ مؤثر مدرک"
+                        :value="formatDate(employee.education?.effective_date)"
+                    />
+
+                  </div>
+
+                </div>
+
+                <!-- =============================================
+                     Insurance Information
+                ============================================== -->
+                <div class="info-card">
+
+                  <div class="info-card-header">
+
+                    <div class="section-icon bg-emerald-50 text-emerald-600">
+                      <i class="pi pi-shield"></i>
+                    </div>
+
+                    <div>
+                      <h3>اطلاعات بیمه</h3>
+                      <p>اطلاعات بیمه تأمین اجتماعی ثبت‌شده در راهکاران</p>
+                    </div>
+
+                  </div>
+
+                  <div class="info-list">
+
+                    <InfoRow
+                        label="شماره بیمه تأمین اجتماعی"
+                        :value="employee.insurance?.number || '—'"
+                        dir="ltr"
+                    />
+
+                    <InfoRow
+                        label="سازمان بیمه‌گر"
+                        :value="employee.insurance?.organization || 'تأمین اجتماعی'"
+                    />
+
+                    <InfoRow
+                        label="نوع بیمه"
+                        :value="employee.insurance?.type || '—'"
+                    />
+
+                    <InfoRow
+                        label="تاریخ شروع سابقه"
+                        :value="formatDate(employee.insurance?.effective_date)"
+                    />
+
+                    <InfoRow
+                        label="تاریخ پایان سابقه"
+                        :value="formatDate(employee.insurance?.expiry_date)"
+                    />
+
+                  </div>
+
+                </div>
+
+
               </div>
 
             </TabPanel>

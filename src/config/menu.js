@@ -439,6 +439,21 @@ export const menuItems = [
                         access: 'assessment.manage',
                         icon: Link,  // از lucide-vue-next import کنید
                     },
+                    // در بخش منوی assessment، بعد از assessment.mappings اضافه کنید:
+                    {
+                        key: 'assessment.templates',
+                        label: 'تمپلیت‌های سوالات عمومی',
+                        to: '/assessment/templates',
+                        access: 'assessment.template_manage',
+                        icon: FileSignature,  // از lucide-vue-next
+                    },
+                    {
+                        key: 'assessment.proposals',
+                        label: 'پیشنهادات سوالات تخصصی',
+                        to: '/assessment/proposals',
+                        access: ['assessment.proposal_create', 'assessment.proposal_review', 'assessment.manage'],
+                        icon: MessageSquareWarning,
+                    },
                 ],
             },
 

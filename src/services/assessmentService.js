@@ -97,5 +97,15 @@ export default {
     getEmployeeReport: (userId) => api.get(`/assessment/employees/${userId}/report`).then(r => r.data),
     getDashboardStats: () => api.get('/assessment/dashboard/stats').then(r => r.data),
 
+// در انتهای فایل، قبل از closing brace اضافه کن:
+
+// ═══════════════════════════════════════════════
+// Template Sync
+// ═══════════════════════════════════════════════
+    syncPostWithTemplate: (postId) => api.post(`/assessment/posts/${postId}/sync-template`).then(r => r.data),
+
+
+    getOrganizationalUnits: () => api.get('/assessment/hr/organizational-units').then(r => r.data),
+    getJobPositions: () => api.get('/assessment/hr/job-positions').then(r => r.data),
 
 }

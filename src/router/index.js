@@ -638,6 +638,28 @@ const router = createRouter({
 
                 { path: '/assessment/assessments/:id/report', name: 'assessment.report', component: () => import('@/views/Assessment/AssessmentReport.vue'), meta: { requiresAuth: true, title: 'کارنامه شایستگی', permission: ['assessment.view', 'assessment.evaluate', 'assessment.manage'] } },
 
+                // ═══════ پیشنهادات سوالات تخصصی (جدید) ═══════
+                {
+                    path: '/assessment/proposals',
+                    name: 'assessment.proposals',
+                    component: () => import('@/views/Assessment/Proposals/AssessmentProposals.vue'),
+                    meta: {
+                        title: 'پیشنهادات سوالات تخصصی',
+                        requiresAuth: true,
+                        permission: ['assessment.proposal_create', 'assessment.proposal_review', 'assessment.manage'],
+                    },
+                },
+                {
+                    path: '/assessment/proposals/designable',
+                    name: 'assessment.proposals.designable',
+                    component: () => import('@/views/Assessment/Proposals/DesignableSubordinates.vue'),
+                    meta: {
+                        title: 'طراحی سوالات تخصصی',
+                        requiresAuth: true,
+                        permission: 'assessment.proposal_create',
+                    },
+                },
+
                 //Sitteng System
 
                 {
@@ -1067,6 +1089,30 @@ const router = createRouter({
                         permission: 'trip_expense.view_reports',
                     },
                 },
+
+
+                // ═══════ تمپلیت‌های سوالات (جدید) ═══════
+                {
+                    path: '/assessment/templates',
+                    name: 'assessment.templates',
+                    component: () => import('@/views/Assessment/Templates/AssessmentTemplates.vue'),
+                    meta: {
+                        title: 'تمپلیت‌های سوالات عمومی',
+                        requiresAuth: true,
+                        permission: 'assessment.template_manage',
+                    },
+                },
+                {
+                    path: '/assessment/templates/:id',
+                    name: 'assessment.template-editor',
+                    component: () => import('@/views/Assessment/Templates/AssessmentTemplateEditor.vue'),
+                    meta: {
+                        title: 'ویرایش تمپلیت',
+                        requiresAuth: true,
+                        permission: 'assessment.template_manage',
+                    },
+                },
+
 
             ],
         },

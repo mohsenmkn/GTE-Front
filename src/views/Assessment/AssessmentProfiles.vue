@@ -190,45 +190,73 @@
     <Dialog
         v-model:visible="showPostDialog"
         :header="editingPost ? 'ویرایش شناسنامه' : 'شناسنامه جدید'"
-        :style="{ width: '600px' }"
+        :style="{ width: '700px' }"
         modal
         :closable="true"
     >
       <div class="grid grid-cols-1 gap-4">
+        <!-- ✅ انتخاب سمت از لیست -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
-            عنوان <span class="text-red-500">*</span>
+            سمت <span class="text-red-500">*</span>
           </label>
-          <InputText
-              v-model="postForm.title"
+          <Select
+              v-model="postForm.post_title"
+              :options="availablePositions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="جستجو و انتخاب سمت..."
+              filter
+              showClear
               class="w-full"
-              placeholder="مثال: رئیس - سرمایه انسانی"
-          />
+              :filterPlaceholder="'جستجو در سمت‌ها...'"
+              :loading="loadingPositions"
+              @update:modelValue="onPositionChange"
+          >
+            <template #option="slotProps">
+              <div class="flex flex-col">
+                <span class="font-medium">{{ slotProps.option.label }}</span>
+                <span class="text-xs text-gray-500">{{ slotProps.option.unit }}</span>
+              </div>
+            </template>
+          </Select>
+          <small v-if="postForm.post_title && !editingPost" class="text-gray-500 mt-1 block">
+            سمت انتخابی: {{ postForm.post_title }}
+          </small>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              رده شغلی
-            </label>
-            <Select
-                v-model="postForm.grade"
-                :options="gradeOptions"
-                placeholder="انتخاب رده"
-                showClear
-                class="w-full"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              واحد سازمانی
-            </label>
-            <InputText
-                v-model="postForm.unit"
-                class="w-full"
-                placeholder="مثال: فناوری اطلاعات"
-            />
-          </div>
+        <!-- ✅ واحد سازمانی (خودکار و فقط خواندنی) -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            واحد سازمانی
+            <span v-if="postForm.unit" class="text-xs text-blue-600 mr-2">
+          (خودکار از سمت انتخابی)
+        </span>
+          </label>
+          <InputText
+              v-model="postForm.unit"
+              class="w-full"
+              placeholder="ابتدا سمت را انتخاب کنید"
+              readonly
+              :class="{ 'bg-gray-100 cursor-not-allowed': postForm.unit }"
+          />
+          <small v-if="!postForm.unit" class="text-orange-600 mt-1 block">
+            <i class="pi pi-info-circle ml-1"></i>
+            لطفاً ابتدا سمت را انتخاب کنید
+          </small>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            رده شغلی <span class="text-red-500">*</span>
+          </label>
+          <Select
+              v-model="postForm.grade"
+              :options="gradeOptions"
+              placeholder="انتخاب رده"
+              showClear
+              class="w-full"
+          />
         </div>
 
         <div>
@@ -492,6 +520,7 @@ import { useAssessmentStore } from '@/stores/assessmentStore'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import { debounce } from '@/utils/debounce'
+import assessmentService from "@/services/assessmentService.js";
 
 const router = useRouter()
 const store = useAssessmentStore()
@@ -511,21 +540,22 @@ const showSingleImport = ref(false)
 const showBulkImport = ref(false)
 
 const editingPost = ref(null)
+
+
+const selectedFile = ref(null)
+const previewResult = ref(null)
+const bulkDirectory = ref('excel-samples')
 const postForm = ref({
-  title: '',
+  post_title: null,  // ✅ جدید: به جای title
+  title: '',         // ✅ برای backward compatibility
   grade: null,
-  unit: '',
+  unit: null,        // ✅ جدید: به جای string
   domain: '',
   min_education: '',
   min_experience_years: 0,
   description: '',
   is_active: true,
 })
-
-const selectedFile = ref(null)
-const previewResult = ref(null)
-const bulkDirectory = ref('excel-samples')
-
 // ═══════════════════════════════════════════════
 // Grade Options
 // ═══════════════════════════════════════════════
@@ -541,12 +571,73 @@ const gradeOptions = [
   'کارگر',
 ]
 
+
+
+
+// ═══════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════
+
+// ✅ جدید: لیست سمت‌ها و واحدها
+const availablePositions = ref([])
+const availableUnits = ref([])
+const loadingPositions = ref(false)
+const loadingUnits = ref(false)
+
+
 // ═══════════════════════════════════════════════
 // Lifecycle
 // ═══════════════════════════════════════════════
 onMounted(() => {
   loadPosts()
 })
+
+// ═══════════════════════════════════════════════
+// Methods: Load HR Data
+// ═══════════════════════════════════════════════
+async function loadPositions() {
+  loadingPositions.value = true
+  try {
+    const data = await assessmentService.getJobPositions()
+    availablePositions.value = (data.positions || []).map(p => ({
+      label: p.post_title,
+      value: p.post_title,
+      unit: p.unit?.title || 'بدون واحد',
+      unit_id: p.unit?.id || null,
+    }))
+  } catch (e) {
+    console.error('خطا در دریافت سمت‌ها:', e)
+    toast.add({
+      severity: 'error',
+      summary: 'خطا',
+      detail: 'خطا در دریافت لیست سمت‌ها',
+      life: 3000,
+    })
+  } finally {
+    loadingPositions.value = false
+  }
+}
+
+async function loadUnits() {
+  loadingUnits.value = true
+  try {
+    const data = await assessmentService.getOrganizationalUnits()
+    availableUnits.value = (data.units || []).map(u => ({
+      label: u.title,
+      value: u.title,
+    }))
+  } catch (e) {
+    console.error('خطا در دریافت واحدها:', e)
+    toast.add({
+      severity: 'error',
+      summary: 'خطا',
+      detail: 'خطا در دریافت لیست واحدها',
+      life: 3000,
+    })
+  } finally {
+    loadingUnits.value = false
+  }
+}
 
 // ═══════════════════════════════════════════════
 // Methods: Posts
@@ -594,9 +685,10 @@ function getGradeSeverity(grade) {
 function openCreateDialog() {
   editingPost.value = null
   postForm.value = {
+    post_title: null,
     title: '',
     grade: null,
-    unit: '',
+    unit: '',  // ✅ خالی شروع می‌شه
     domain: '',
     min_education: '',
     min_experience_years: 0,
@@ -604,14 +696,19 @@ function openCreateDialog() {
     is_active: true,
   }
   showPostDialog.value = true
+
+  // بارگذاری سمت‌ها و واحدها
+  loadPositions()
+  loadUnits()
 }
 
 function openEditDialog(post) {
   editingPost.value = post
   postForm.value = {
+    post_title: post.title,
     title: post.title,
     grade: post.grade,
-    unit: post.unit,
+    unit: post.unit,  // ✅ واحد از پست فعلی پر می‌شه
     domain: post.domain,
     min_education: post.min_education,
     min_experience_years: post.min_experience_years,
@@ -619,22 +716,57 @@ function openEditDialog(post) {
     is_active: post.is_active,
   }
   showPostDialog.value = true
+
+  // بارگذاری سمت‌ها و واحدها
+  loadPositions()
+  loadUnits()
 }
 
 async function savePost() {
-  if (!postForm.value.title) {
+  if (!postForm.value.post_title) {
     toast.add({
       severity: 'warn',
       summary: 'هشدار',
-      detail: 'عنوان شناسنامه الزامی است',
+      detail: 'انتخاب سمت الزامی است',
+      life: 3000,
+    })
+    return
+  }
+
+  if (!postForm.value.unit) {
+    toast.add({
+      severity: 'warn',
+      summary: 'هشدار',
+      detail: 'واحد سازمانی به صورت خودکار از سمت انتخابی پر می‌شود',
+      life: 3000,
+    })
+    return
+  }
+
+  if (!postForm.value.grade) {
+    toast.add({
+      severity: 'warn',
+      summary: 'هشدار',
+      detail: 'انتخاب رده شغلی الزامی است',
       life: 3000,
     })
     return
   }
 
   try {
+    const payload = {
+      title: postForm.value.post_title,
+      grade: postForm.value.grade,
+      unit: postForm.value.unit,
+      domain: postForm.value.domain,
+      min_education: postForm.value.min_education,
+      min_experience_years: postForm.value.min_experience_years,
+      description: postForm.value.description,
+      is_active: postForm.value.is_active,
+    }
+
     if (editingPost.value) {
-      await store.updatePost(editingPost.value.id, postForm.value)
+      await store.updatePost(editingPost.value.id, payload)
       toast.add({
         severity: 'success',
         summary: 'موفق',
@@ -642,7 +774,7 @@ async function savePost() {
         life: 3000,
       })
     } else {
-      await store.createPost(postForm.value)
+      await store.createPost(payload)
       toast.add({
         severity: 'success',
         summary: 'موفق',
@@ -651,6 +783,7 @@ async function savePost() {
       })
     }
     showPostDialog.value = false
+    await loadPosts()
   } catch (e) {
     toast.add({
       severity: 'error',
@@ -708,15 +841,7 @@ async function executeSingleImport() {
   if (!selectedFile.value) return
 
   try {
-    console.log('🔍 [DEBUG] شروع import فایل:', selectedFile.value.name)
-    console.log('🔍 [DEBUG] حجم فایل:', selectedFile.value.size, 'bytes')
-
     const result = await store.importExcel(selectedFile.value)
-
-    console.log('✅ [DEBUG] نتیجه import:', result)
-    console.log('📊 [DEBUG] آمار:', result.stats)
-    console.log('⚠️ [DEBUG] موارد غیرعادی:', result.anomalies)
-
     toast.add({
       severity: 'success',
       summary: 'موفق',
@@ -726,9 +851,6 @@ async function executeSingleImport() {
     closeSingleImport()
     await loadPosts()
   } catch (e) {
-    console.error('❌ [DEBUG] خطا در import:', e)
-    console.error('❌ [DEBUG] پاسخ سرور:', e.response?.data)
-
     toast.add({
       severity: 'error',
       summary: 'خطا در import',
@@ -739,11 +861,6 @@ async function executeSingleImport() {
 }
 
 
-// State جدید
-const fileInput = ref(null)
-const previewLoading = ref(false)
-
-// انتخاب فایل
 function onFileSelected(event) {
   const file = event.target.files[0]
   if (file) {
@@ -752,7 +869,6 @@ function onFileSelected(event) {
   }
 }
 
-// پاک کردن فایل انتخابی
 function clearSelectedFile() {
   selectedFile.value = null
   previewResult.value = null
@@ -761,19 +877,11 @@ function clearSelectedFile() {
   }
 }
 
-// اجرای پیش‌نمایش
 async function executePreview() {
   if (!selectedFile.value) return
 
   try {
-    console.log('🔍 [DEBUG] شروع پیش‌نمایش فایل:', selectedFile.value.name)
-
     previewResult.value = await store.importPreview(selectedFile.value)
-
-    console.log('✅ [DEBUG] نتیجه پیش‌نمایش:', previewResult.value)
-    console.log('📊 [DEBUG] آمار پیش‌نمایش:', previewResult.value.stats)
-    console.log('⚠️ [DEBUG] anomalies:', previewResult.value.anomalies)
-
     toast.add({
       severity: 'success',
       summary: 'پیش‌نمایش آماده است',
@@ -781,9 +889,6 @@ async function executePreview() {
       life: 3000,
     })
   } catch (e) {
-    console.error('❌ [DEBUG] خطا در پیش‌نمایش:', e)
-    console.error('❌ [DEBUG] پاسخ سرور:', e.response?.data)
-
     toast.add({
       severity: 'error',
       summary: 'خطا در پیش‌نمایش',
@@ -793,12 +898,10 @@ async function executePreview() {
   }
 }
 
-// اصلاح closeSingleImport
 function closeSingleImport() {
   showSingleImport.value = false
   clearSelectedFile()
 }
-
 
 // ═══════════════════════════════════════════════
 // Bulk Import
@@ -833,4 +936,41 @@ async function executeBulkImport() {
     })
   }
 }
+
+
+
+
+// ═══════════════════════════════════════════════
+// Lifecycle
+// ═══════════════════════════════════════════════
+onMounted(() => {
+  loadPosts()
+})
+
+// State جدید
+const fileInput = ref(null)
+const previewLoading = ref(false)
+
+
+
+
+// ═══════════════════════════════════════════════
+// Methods: Load HR Data
+// ═══════════════════════════════════════════════
+
+// ✅ متد جدید: هنگام تغییر سمت، واحد سازمانی را خودکار پر کن
+function onPositionChange(selectedTitle) {
+  if (!selectedTitle) {
+    postForm.value.unit = ''
+    return
+  }
+
+  // پیدا کردن واحد سازمانی از لیست سمت‌ها
+  const selectedPosition = availablePositions.value.find(p => p.value === selectedTitle)
+  if (selectedPosition) {
+    postForm.value.unit = selectedPosition.unit || ''
+  }
+}
+
+
 </script>
