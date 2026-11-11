@@ -88,6 +88,13 @@ export const menuItems = [
                 access: 'users.read',
                 icon: ShieldCheck,
             },
+            {
+                key: 'system-logs',
+                label: 'رویدادهای سیستم',
+                to: '/system/logs',
+                access: 'Log.view',
+                icon: Activity,
+            },
         ],
     },
 

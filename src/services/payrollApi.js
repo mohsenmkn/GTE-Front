@@ -3,6 +3,9 @@ import axios from 'axios';
 import api from '@/api/axios.js'
 
 export const payrollApi = {
+    getLogs(params = {}) {
+        return api.get('/system/logs', { params });
+    },
     /**
      * دریافت لیست ماه‌های موجود
      */

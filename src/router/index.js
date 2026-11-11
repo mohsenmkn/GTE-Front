@@ -170,6 +170,12 @@ const router = createRouter({
                         icon: 'pi pi-users',
                     },
                 },
+                {
+                    path: '/system/logs',
+                    name: 'system.logs',
+                    component: () => import('@/views/Payroll/PayrollLogs.vue'),
+                    meta: { title: 'رویدادهای سیستم', requiresAuth: true, permission: 'Log.view' },
+                },
 
                 //Control Tradod
                 {
