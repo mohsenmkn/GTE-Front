@@ -3,11 +3,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import Button from 'primevue/button';
-import ProgressSpinner from 'primevue/progressspinner';
 import Message from 'primevue/message';
-import Card from 'primevue/card';
-import Divider from 'primevue/divider';
-import Tag from 'primevue/tag';
+import Skeleton from 'primevue/skeleton';
 
 import MonthSelector from './MonthSelector.vue';
 import PayslipHeader from './PayslipHeader.vue';
@@ -30,32 +27,30 @@ const {
   changeMonth,
 } = usePayroll();
 
-// ═══════════════════════════════════════════
-// 🔑 محدود کردن ماه‌ها به ۶ ماه اخیر
-// ══════════════════════════════════════════
+// فقط ۶ ماه اخیر (جدیدترین‌ها)
 const recentMonths = computed(() => {
   if (!months.value || months.value.length === 0) return [];
-
-  // اگر ماه‌ها به صورت آبجکت { value, label } هستند
-  // فقط ۶ تای آخر (جدیدترین‌ها) را نمایش می‌دهیم
   return months.value.slice(0, 6);
 });
 
-// ═══════════════════════════════════════════
-// Responsive Breakpoints
-// ═══════════════════════════════════════════
+const netPayFormatted = computed(() =>
+    Number(payslip.value?.summary?.net_pay ?? 0).toLocaleString('fa-IR')
+);
 
-const isMobile = computed(() => window.innerWidth < 640);
-const isTablet = computed(() => window.innerWidth >= 640 && window.innerWidth < 1024);
-const isDesktop = computed(() => window.innerWidth >= 1024);
+const selectorRef = ref(null);
 
-// ═══════════════════════════════════════════
-// Actions
-// ═══════════════════════════════════════════
+const scrollToSelector = () => {
+  selectorRef.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
 
-/**
- * 🔑 چاپ فیش حقوقی
- */
+const retry = () => {
+  if (selectedMonth.value) {
+    changeMonth(selectedMonth.value);
+  } else {
+    loadMonths();
+  }
+};
+
 const handlePrint = () => {
   if (!payslip.value) {
     toast.add({
@@ -82,685 +77,464 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="payslip-container">
-    <!-- ═══════════════════════════════════════════
-         HEADER - عنوان و توضیحات
-         ═══════════════════════════════════════════ -->
-    <header class="page-header">
-      <div class="header-content">
-        <div class="header-icon-wrapper">
-          <i class="pi pi-wallet header-icon"></i>
-        </div>
-        <div class="header-text">
-          <h1 class="page-title">فیش حقوقی</h1>
-          <p class="page-subtitle">مشاهده و چاپ فیش حقوقی ماهانه</p>
-        </div>
+  <div class="ps" dir="rtl">
+    <!-- عنوان صفحه -->
+    <header class="ps-top no-print">
+      <div class="ps-top__title">
+        <h1>فیش حقوقی</h1>
+        <p>مشاهده و چاپ فیش حقوقی ماهانه</p>
       </div>
+
+      <Button
+          v-if="payslip && !error"
+          label="چاپ فیش"
+          icon="pi pi-print"
+          class="ps-top__print"
+          @click="handlePrint"
+      />
     </header>
 
-    <!-- ═══════════════════════════════════════════
-         MONTH SELECTOR - انتخاب ماه (فقط ۶ ماه اخیر)
-         ═══════════════════════════════════════════ -->
-    <div class="month-selector-wrapper">
+    <!-- انتخاب ماه -->
+    <section ref="selectorRef" class="ps-months no-print" aria-label="انتخاب ماه">
       <MonthSelector
           v-model="selectedMonth"
           :months="recentMonths"
           @update:modelValue="changeMonth"
       />
-    </div>
+    </section>
 
-    <!-- ═══════════════════════════════════════════
-         LOADING STATE - حالت بارگذاری
-         ═══════════════════════════════════════════ -->
-    <Transition name="fade" mode="out-in">
-      <div v-if="loading && !payslip" class="loading-wrapper">
-        <div class="loading-content">
-          <ProgressSpinner
-              strokeWidth="3"
-              fill="var(--surface-ground)"
-              animationDuration=".8s"
-          />
-          <p class="loading-text">در حال بارگذاری فیش حقوقی...</p>
-        </div>
-      </div>
-
-      <!-- ═══════════════════════════════════════════
-           ERROR STATE - حالت خطا
-           ═══════════════════════════════════════════ -->
-      <Message
-          v-else-if="error"
-          severity="error"
-          :closable="false"
-          class="error-message"
+    <Transition name="ps-fade" mode="out-in">
+      <!-- بارگذاری -->
+      <div
+          v-if="loading && !payslip"
+          key="loading"
+          class="sheet sheet--loading"
+          role="status"
+          aria-live="polite"
       >
-        <div class="error-content">
-          <i class="pi pi-exclamation-circle"></i>
-          <span>{{ error }}</span>
+        <Skeleton class="sk-hero" />
+        <div class="sk-body">
+          <Skeleton class="sk-row sk-row--info" />
+          <Skeleton class="sk-row sk-row--summary" />
+          <Skeleton class="sk-row sk-row--items" />
         </div>
-      </Message>
-
-      <!-- ═══════════════════════════════════════════
-           PAYSLIP CONTENT - محتوای فیش حقوقی
-           ══════════════════════════════════════════ -->
-      <div v-else-if="payslip" class="payslip-wrapper">
-
-        <!-- Action Buttons Toolbar -->
-        <div class="action-toolbar">
-          <div class="toolbar-title">
-            <i class="pi pi-cog"></i>
-            <span>عملیات</span>
-          </div>
-
-          <div class="toolbar-actions">
-            <Button
-                label="چاپ فیش"
-                icon="pi pi-print"
-                severity="secondary"
-                outlined
-                @click="handlePrint"
-                class="action-btn"
-            />
-          </div>
-        </div>
-
-        <!-- Main Payslip Card -->
-        <Card class="payslip-card">
-          <template #header>
-            <div class="card-header">
-              <div class="header-badge">
-                <i class="pi pi-calendar"></i>
-                <span>{{ payslip.year_month_label }}</span>
-              </div>
-            </div>
-          </template>
-
-          <template #content>
-            <!-- Payslip Header Info -->
-            <div class="payslip-section">
-              <PayslipHeader :payslip="payslip" />
-            </div>
-
-            <Divider />
-
-            <!-- Summary Section -->
-            <div class="payslip-section">
-              <h3 class="section-title">
-                <i class="pi pi-chart-bar"></i>
-                خلاصه وضعیت
-              </h3>
-              <PayslipSummary :summary="payslip.summary" />
-            </div>
-
-            <Divider />
-
-            <!-- Items Section -->
-            <div class="payslip-section">
-              <h3 class="section-title">
-                <i class="pi pi-list"></i>
-                جزئیات
-              </h3>
-              <PayslipItems
-                  :grouped-items="payslip.items"
-                  :summary="payslip.summary"
-              />
-            </div>
-
-            <!-- Net Pay Highlight -->
-            <div class="net-pay-highlight">
-              <div class="net-pay-label">
-                <i class="pi pi-wallet"></i>
-                <span>خالص پرداختی</span>
-              </div>
-              <div class="net-pay-amount">
-                {{ Number(payslip.summary.net_pay).toLocaleString('fa-IR') }}
-                <span class="currency">ریال</span>
-              </div>
-            </div>
-          </template>
-        </Card>
+        <span class="sr-only">در حال بارگذاری فیش حقوقی...</span>
       </div>
 
-      <!-- ═══════════════════════════════════════════
-           EMPTY STATE - حالت خالی
-           ═══════════════════════════════════════════ -->
-      <div v-else-if="!loading" class="empty-wrapper">
-        <div class="empty-content">
-          <div class="empty-icon">
-            <i class="pi pi-inbox"></i>
+      <!-- خطا -->
+      <div v-else-if="error" key="error" class="ps-state">
+        <Message severity="error" :closable="false" class="ps-state__msg">
+          <div class="ps-state__row">
+            <i class="pi pi-exclamation-circle"></i>
+            <span>{{ error }}</span>
           </div>
-          <h3 class="empty-title">فیش حقوقی یافت نشد</h3>
-          <p class="empty-text">
-            برای ماه انتخاب‌شده فیش حقوقی ثبت نشده است
-          </p>
-          <Button
-              label="انتخاب ماه دیگر"
-              icon="pi pi-calendar"
-              severity="secondary"
-              outlined
-          />
+        </Message>
+        <Button
+            label="تلاش دوباره"
+            icon="pi pi-refresh"
+            severity="secondary"
+            outlined
+            @click="retry"
+        />
+      </div>
+
+      <!-- فیش حقوقی -->
+      <article v-else-if="payslip" key="payslip" class="sheet">
+        <!-- بخش اصلی: خالص پرداختی -->
+        <section class="hero" aria-label="خالص پرداختی">
+          <div class="hero__main">
+            <span class="hero__label">خالص پرداختی</span>
+            <div class="hero__amount">
+              <span class="hero__value">{{ netPayFormatted }}</span>
+              <span class="hero__currency">ریال</span>
+            </div>
+          </div>
+
+          <span class="hero__month">
+            <i class="pi pi-calendar" aria-hidden="true"></i>
+            {{ payslip.year_month_label }}
+          </span>
+        </section>
+
+        <!-- خط برش فیش -->
+        <div class="tear" aria-hidden="true"></div>
+
+        <div class="body">
+          <section class="block">
+            <PayslipHeader :payslip="payslip" />
+          </section>
+
+          <section class="block">
+            <h2 class="block__title">خلاصه وضعیت</h2>
+            <PayslipSummary :summary="payslip.summary" />
+          </section>
+
+          <!-- PayslipItems عنوان خودش را دارد؛ عنوان تکراری اضافه نمی‌شود -->
+          <section class="block block__scroll">
+            <PayslipItems
+                :grouped-items="payslip.items"
+                :summary="payslip.summary"
+            />
+          </section>
         </div>
+      </article>
+
+      <!-- خالی -->
+      <div v-else-if="!loading" key="empty" class="ps-state ps-state--empty">
+        <span class="ps-state__icon" aria-hidden="true">
+          <i class="pi pi-inbox"></i>
+        </span>
+        <h2>فیش حقوقی یافت نشد</h2>
+        <p>برای ماه انتخاب‌شده فیشی ثبت نشده است. ماه دیگری را انتخاب کنید.</p>
+        <Button
+            label="انتخاب ماه دیگر"
+            icon="pi pi-calendar"
+            severity="secondary"
+            outlined
+            @click="scrollToSelector"
+        />
       </div>
     </Transition>
   </div>
 </template>
 
 <style scoped>
-/* ══════════════════════════════════════════════════════
-   CONTAINER & BASE
-   ═══════════════════════════════════════════════════════ */
+/* ───────────── توکن‌ها ─────────────
+   رنگ‌های سطح و متن از تم PrimeVue می‌آیند (سازگار با حالت تاریک)،
+   رنگ‌های برند (سرمه‌ای و طلایی) ثابت‌اند. */
+.ps {
+  --ps-ground: var(--surface-ground, #f3f4f7);
+  --ps-surface: var(--surface-card, #ffffff);
+  --ps-border: var(--surface-border, #e4e7ee);
+  --ps-text: var(--text-color, #1b2233);
+  --ps-muted: var(--text-color-secondary, #667085);
 
-.payslip-container {
-  padding: 1rem;
-  max-width: 1200px;
+  --ps-ink: #14213d;
+  --ps-ink-soft: #1f2f52;
+  --ps-gold: #d9b865;
+  --ps-paper: #f6f1e4;
+
+  max-width: 1120px;
   margin: 0 auto;
-  min-height: calc(100vh - 140px);
+  padding: 2rem 2rem 3rem;
+  background: var(--ps-ground);
+  color: var(--ps-text);
 }
 
-/* ═══════════════════════════════════════════════════════
-   PAGE HEADER
-   ═══════════════════════════════════════════════════════ */
-
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 1.25rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex: 1;
-}
-
-.header-icon-wrapper {
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-radius: 14px;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.header-icon {
-  font-size: 1.75rem;
-  color: white;
-}
-
-.header-text {
-  flex: 1;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1e293b;
-  line-height: 1.3;
-}
-
-.page-subtitle {
-  margin: 0.25rem 0 0;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-/* ═══════════════════════════════════════════════════════
-   MONTH SELECTOR
-   ═══════════════════════════════════════════════════════ */
-
-.month-selector-wrapper {
-  margin-bottom: 1.5rem;
-}
-
-/* ═══════════════════════════════════════════════════════
-   LOADING STATE
-   ═══════════════════════════════════════════════════════ */
-
-.loading-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  padding: 2rem;
-}
-
-.loading-content {
-  text-align: center;
-}
-
-.loading-text {
-  margin-top: 1rem;
-  font-size: 0.95rem;
-  color: #64748b;
-}
-
-/* ═══════════════════════════════════════════════════════
-   ERROR STATE
-   ══════════════════════════════════════════════════════ */
-
-.error-message {
-  margin: 2rem 0;
-}
-
-.error-content {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.95rem;
-}
-
-.error-content i {
-  font-size: 1.25rem;
-}
-
-/* ═══════════════════════════════════════════════════════
-   PAYSLIP WRAPPER
-   ═══════════════════════════════════════════════════════ */
-
-.payslip-wrapper {
-  animation: slideUp 0.4s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ═══════════════════════════════════════════════════════
-   ACTION TOOLBAR
-   ═══════════════════════════════════════════════════════ */
-
-.action-toolbar {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 1.25rem;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.toolbar-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  color: #475569;
-  font-size: 0.95rem;
-}
-
-.toolbar-title i {
-  font-size: 1.1rem;
-}
-
-.toolbar-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.action-btn {
-  flex: 1;
-  min-width: 140px;
-}
-
-/* ═══════════════════════════════════════════════════════
-   PAYSLIP CARD
-   ═══════════════════════════════════════════════════════ */
-
-.payslip-card {
-  background: white;
-  border-radius: 16px;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
-.card-header {
+/* ───────────── عنوان صفحه ───────────── */
+.ps-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 1.5rem;
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-  border-bottom: 1px solid #cbd5e1;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
 }
 
-.header-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: white;
-  border-radius: 8px;
-  font-weight: 600;
-  color: #334155;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.header-badge i {
-  color: #3b82f6;
-}
-
-/* ═══════════════════════════════════════════════════════
-   SECTIONS
-   ═══════════════════════════════════════════════════════ */
-
-.payslip-section {
-  margin-bottom: 1.5rem;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0 0 1rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.section-title i {
-  color: #3b82f6;
-  font-size: 1.2rem;
-}
-
-/* ═══════════════════════════════════════════════════════
-   NET PAY HIGHLIGHT
-   ═══════════════════════════════════════════════════════ */
-
-.net-pay-highlight {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.net-pay-label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: white;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.net-pay-label i {
-  font-size: 1.5rem;
-}
-
-.net-pay-amount {
+.ps-top h1 {
+  margin: 0;
   font-size: 1.75rem;
   font-weight: 800;
-  color: white;
-  text-align: left;
-  direction: ltr;
+  line-height: 1.4;
 }
 
-.net-pay-amount .currency {
-  font-size: 0.875rem;
-  font-weight: 500;
-  opacity: 0.9;
-  margin-right: 0.25rem;
-}
-
-/* ═══════════════════════════════════════════════════════
-   EMPTY STATE
-   ═══════════════════════════════════════════════════════ */
-
-.empty-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  padding: 2rem;
-}
-
-.empty-content {
-  text-align: center;
-  max-width: 400px;
-}
-
-.empty-icon {
-  width: 120px;
-  height: 120px;
-  margin: 0 auto 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-  border-radius: 50%;
-}
-
-.empty-icon i {
-  font-size: 3.5rem;
-  color: #94a3b8;
-}
-
-.empty-title {
-  margin: 0 0 0.75rem;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.empty-text {
-  margin: 0 0 1.5rem;
+.ps-top p {
+  margin: 0.125rem 0 0;
   font-size: 0.95rem;
-  color: #64748b;
-  line-height: 1.6;
+  color: var(--ps-muted);
 }
 
-/* ═══════════════════════════════════════════════════════
-   TRANSITIONS
-   ══════════════════════════════════════════════════════ */
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+.ps-top__print {
+  background: var(--ps-ink);
+  border-color: var(--ps-ink);
+  color: var(--ps-paper);
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.ps-top__print:hover {
+  background: var(--ps-ink-soft) !important;
+  border-color: var(--ps-ink-soft) !important;
+  color: #fff !important;
+}
+
+.ps-months {
+  margin-bottom: 1.5rem;
+}
+
+/* ───────────── برگه فیش ───────────── */
+.sheet {
+  position: relative;
+  border-radius: 20px;
+  background: var(--ps-surface);
+  border: 1px solid var(--ps-border);
+  box-shadow:
+      0 1px 2px rgba(20, 33, 61, 0.06),
+      0 18px 40px -18px rgba(20, 33, 61, 0.28);
+}
+
+/* ───────────── بخش خالص پرداختی ───────────── */
+.hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.75rem 2.25rem 2.25rem;
+  border-radius: 19px 19px 0 0;
+  background: var(--ps-ink);
+  color: var(--ps-paper);
+}
+
+/* حلقه‌های ظریف تزئینی، تداعی‌کنندهٔ گیلوشِ اسناد رسمی */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+      repeating-radial-gradient(
+          circle at 0% 120%,
+          transparent 0 26px,
+          rgba(217, 184, 101, 0.13) 26px 27px
+      );
+}
+
+.hero__main,
+.hero__month {
+  position: relative;
+}
+
+.hero__label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ps-gold);
+}
+
+.hero__amount {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.hero__value {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero__currency {
+  font-size: 1.1rem;
+  opacity: 0.75;
+}
+
+.hero__month {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid rgba(217, 184, 101, 0.55);
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ps-gold);
+  white-space: nowrap;
+}
+
+/* ───────────── خط برش (نشان‌دهندهٔ ظاهر فیش) ───────────── */
+.tear {
+  position: relative;
+  height: 0;
+  z-index: 1;
+}
+
+.tear::before,
+.tear::after {
+  content: '';
+  position: absolute;
+  top: -13px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ps-ground);
+  box-shadow: inset 0 0 0 1px var(--ps-border);
+}
+
+.tear::before { right: -14px; }
+.tear::after { left: -14px; }
+
+/* ───────────── بدنه: تک‌ستونه و تمام‌عرض ─────────────
+   خلاصه (۳ کارت کنار هم) و جدول اقلام به عرض کامل نیاز دارند. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2.25rem 2.25rem 2.5rem;
+}
+
+.block {
+  min-width: 0;
+}
+
+.block__title {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin: 0 0 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ps-text);
+}
+
+.block__title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ps-border);
+}
+
+.block__scroll {
+  overflow-x: auto;
+}
+
+/* ───────────── اسکلت بارگذاری ───────────── */
+.sheet--loading {
+  overflow: hidden;
+}
+
+.sk-hero {
+  height: 150px !important;
+  border-radius: 0 !important;
+}
+
+.sk-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2.25rem;
+}
+
+.sk-row { border-radius: 12px !important; }
+.sk-row--info { height: 110px !important; }
+.sk-row--summary { height: 150px !important; }
+.sk-row--items { height: 280px !important; }
+
+/* ───────────── خطا و حالت خالی ───────────── */
+.ps-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.ps-state__msg { width: 100%; }
+
+.ps-state__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: start;
+}
+
+.ps-state--empty {
+  padding: 4rem 1rem;
+  border: 1px dashed var(--ps-border);
+  border-radius: 20px;
+  background: var(--ps-surface);
+}
+
+.ps-state__icon {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: var(--ps-ground);
+  border: 1px solid var(--ps-border);
+  color: var(--ps-muted);
+  font-size: 2.1rem;
+}
+
+.ps-state h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.ps-state p {
+  margin: 0;
+  max-width: 28rem;
+  line-height: 1.9;
+  color: var(--ps-muted);
+}
+
+/* ───────────── انتقال ───────────── */
+.ps-fade-enter-active,
+.ps-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.ps-fade-enter-from,
+.ps-fade-leave-to {
   opacity: 0;
 }
 
-/* ═══════════════════════════════════════════════════════
-   RESPONSIVE DESIGN
-   ═══════════════════════════════════════════════════════ */
-
-/* Tablet */
-@media (min-width: 640px) and (max-width: 1023px) {
-  .payslip-container {
-    padding: 1.25rem;
-  }
-
-  .page-header {
-    padding: 1.5rem;
-  }
-
-  .header-icon-wrapper {
-    width: 60px;
-    height: 60px;
-  }
-
-  .header-icon {
-    font-size: 2rem;
-  }
-
-  .page-title {
-    font-size: 1.65rem;
-  }
-
-  .toolbar-actions {
-    gap: 1rem;
-  }
-
-  .action-btn {
-    min-width: 160px;
+@media (prefers-reduced-motion: reduce) {
+  .ps-fade-enter-active,
+  .ps-fade-leave-active {
+    transition: none;
   }
 }
 
-/* Desktop */
-@media (min-width: 1024px) {
-  .payslip-container {
-    padding: 2rem;
-  }
-
-  .page-header {
-    padding: 1.75rem 2rem;
-    margin-bottom: 2rem;
-  }
-
-  .header-icon-wrapper {
-    width: 64px;
-    height: 64px;
-  }
-
-  .header-icon {
-    font-size: 2.25rem;
-  }
-
-  .page-title {
-    font-size: 1.875rem;
-  }
-
-  .page-subtitle {
-    font-size: 1rem;
-  }
-
-  .action-toolbar {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .toolbar-title {
-    margin-bottom: 0;
-  }
-
-  .toolbar-actions {
-    gap: 1rem;
-  }
-
-  .action-btn {
-    flex: initial;
-    min-width: auto;
-  }
-
-  .card-header {
-    padding: 1.5rem 2rem;
-  }
-
-  .net-pay-highlight {
-    padding: 2rem;
-  }
-
-  .net-pay-label {
-    font-size: 1.25rem;
-  }
-
-  .net-pay-amount {
-    font-size: 2rem;
-  }
+/* ───────────── عرض‌های کوچک‌تر از دسکتاپ: فقط جلوگیری از به‌هم‌ریختگی ───────────── */
+@media (max-width: 1023px) {
+  .ps { padding: 1rem 1rem 2rem; }
+  .hero { flex-direction: column-reverse; align-items: flex-start; padding: 1.5rem; }
+  .hero__value { font-size: 2.25rem; }
+  .body,
+  .sk-body { padding: 1.25rem; }
 }
 
-/* Mobile Optimizations */
-@media (max-width: 639px) {
-  .payslip-container {
-    padding: 0.75rem;
-  }
-
-  .page-header {
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .header-icon-wrapper {
-    width: 48px;
-    height: 48px;
-  }
-
-  .header-icon {
-    font-size: 1.5rem;
-  }
-
-  .page-title {
-    font-size: 1.25rem;
-  }
-
-  .page-subtitle {
-    font-size: 0.8rem;
-  }
-
-  .action-toolbar {
-    padding: 1rem;
-  }
-
-  .toolbar-actions {
-    flex-direction: column;
-  }
-
-  .action-btn {
-    width: 100%;
-    min-width: 100%;
-  }
-
-  .card-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-    padding: 1rem;
-  }
-
-  .net-pay-highlight {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-    padding: 1.25rem;
-  }
-
-  .net-pay-label {
-    justify-content: center;
-  }
-
-  .net-pay-amount {
-    font-size: 1.5rem;
-  }
-}
-
-/* Print Styles */
+/* ───────────── چاپ ───────────── */
 @media print {
-  .page-header,
-  .month-selector-wrapper,
-  .action-toolbar {
-    display: none;
+  .no-print,
+  .tear {
+    display: none !important;
   }
 
-  .payslip-card {
+  .ps { padding: 0; max-width: none; background: #fff; }
+
+  .sheet {
+    border: 1px solid #999;
     box-shadow: none;
-    border: 1px solid #ddd;
+    border-radius: 0;
   }
+
+  .hero {
+    background: #fff;
+    color: #000;
+    border-radius: 0;
+    border-bottom: 2px solid #000;
+  }
+
+  .hero::before { display: none; }
+  .hero__label,
+  .hero__month { color: #000; border-color: #000; }
+
+  .body { padding: 1rem; }
+  .block { break-inside: avoid; }
 }
 </style>
