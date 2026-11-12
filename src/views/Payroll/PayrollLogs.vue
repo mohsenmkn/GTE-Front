@@ -18,6 +18,69 @@
       />
     </header>
 
+    <!-- هشدارهای تشخیص خودکار -->
+    <section class="pl-card pl-alerts" aria-labelledby="security-alerts-title">
+      <header class="pl-alerts__head">
+        <div>
+          <h2 id="security-alerts-title">هشدارهای امنیتی</h2>
+          <p>الگوهای مشکوک ورود و درخواست کد بازیابی</p>
+        </div>
+        <div class="pl-alerts__tools">
+          <Select
+              v-model="alertStatus"
+              :options="alertStatusOptions"
+              option-label="label"
+              option-value="value"
+              aria-label="وضعیت هشدارها"
+              @change="loadAlerts"
+          />
+          <Button icon="pi pi-refresh" severity="secondary" outlined aria-label="به‌روزرسانی هشدارها" :loading="alertsLoading" @click="loadAlerts" />
+        </div>
+      </header>
+
+      <Message v-if="alertsError" severity="error" :closable="false" class="pl-error">{{ alertsError }}</Message>
+      <div v-else-if="alertsLoading && !alerts.length" class="pl-alerts__empty">در حال دریافت هشدارها…</div>
+      <div v-else-if="!alerts.length" class="pl-alerts__empty">
+        <i class="pi pi-shield" aria-hidden="true"></i>
+        <span>{{ alertStatus === 'open' ? 'هشدارِ باز و در انتظار رسیدگی وجود ندارد.' : 'هشداری در این فهرست نیست.' }}</span>
+      </div>
+      <div v-else class="pl-alerts__list">
+        <article v-for="alert in alerts" :key="alert.id" class="pl-alert" :class="`pl-alert--${alert.severity}`">
+          <div class="pl-alert__mark" aria-hidden="true"><i class="pi pi-exclamation-triangle"></i></div>
+          <div class="pl-alert__body">
+            <div class="pl-alert__title-row">
+              <h3>{{ alert.title }}</h3>
+              <span class="pl-alert__severity">{{ severityLabel(alert.severity) }}</span>
+            </div>
+            <p>{{ alert.description }}</p>
+            <div class="pl-alert__meta">
+              <span v-if="alert.source_ip"><i class="pi pi-globe"></i> IP: {{ alert.source_ip }}</span>
+              <span v-if="alert.subject"><i class="pi pi-user"></i> هدف: {{ alert.subject }}</span>
+              <span><i class="pi pi-bolt"></i> {{ alert.occurrence_count.toLocaleString('fa-IR') }} رخداد</span>
+              <span><i class="pi pi-clock"></i> {{ datePart(alert.last_detected_at) }}، {{ timePart(alert.last_detected_at) }}</span>
+            </div>
+          </div>
+          <Button
+              v-if="alert.status === 'open'"
+              label="علامت‌گذاری به‌عنوان رسیدگی‌شده"
+              icon="pi pi-check"
+              severity="secondary"
+              outlined
+              size="small"
+              :loading="resolvingAlert === alert.id"
+              @click="resolveAlert(alert)"
+          />
+          <span v-else class="pl-alert__resolved">
+            <i class="pi pi-check-circle"></i> رسیدگی‌شده
+            <small v-if="alert.resolver?.name">توسط {{ alert.resolver.name }}</small>
+          </span>
+        </article>
+      </div>
+      <footer v-if="alertTotal > alerts.length" class="pl-alerts__footer">
+        {{ alerts.length.toLocaleString('fa-IR') }} مورد از {{ alertTotal.toLocaleString('fa-IR') }} هشدار نمایش داده شده است.
+      </footer>
+    </section>
+
     <!-- فیلترها -->
     <section class="pl-card pl-filters" aria-label="فیلتر رویدادها">
       <form class="pl-filters__form" @submit.prevent="applyFilters">
@@ -213,17 +276,8 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import Button from 'primevue/button'
-import Column from 'primevue/column'
-import DataTable from 'primevue/datatable'
-import DatePicker from 'primevue/datepicker'
-import IconField from 'primevue/iconfield'
-import InputIcon from 'primevue/inputicon'
-import InputText from 'primevue/inputtext'
-import Message from 'primevue/message'
-import Select from 'primevue/select'
-import { payrollApi } from '@/services/payrollApi.js'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { payrollApi } from '@/services/payrollapi.js'
 
 const actionOptions = [
   { label: 'مشاهده فیش', value: 'payslip.viewed' },
@@ -235,17 +289,25 @@ const actionOptions = [
   { label: 'ورود مسدودشده', value: 'login.blocked' },
   { label: 'شکست کپچا', value: 'login.captcha_failed' },
   { label: 'ورود حساب غیرفعال', value: 'login.inactive_account' },
+  { label: 'تلاش ورود مسدودشده', value: 'auth.composite_lock_blocked' },
+  { label: 'قفل موقت امنیتی', value: 'auth.composite_lock_triggered' },
   { label: 'ارسال OTP بازیابی رمز', value: 'password_reset.otp_sent' },
   { label: 'خطای ارسال OTP', value: 'password_reset.otp_send_failed' },
+  { label: 'خطای فنی ارسال OTP', value: 'password_reset.otp_send_error' },
   { label: 'حساب بازیابی یافت نشد', value: 'password_reset.account_not_found' },
+  { label: 'حساب بازیابی غیرفعال', value: 'password_reset.inactive_account' },
   { label: 'تأیید OTP', value: 'password_reset.otp_verified' },
   { label: 'تأیید ناموفق OTP', value: 'password_reset.otp_verification_failed' },
+  { label: 'تأیید OTP حساب غیرفعال', value: 'password_reset.otp_verified_inactive_account' },
   { label: 'تغییر رمز موفق', value: 'password_reset.completed' },
   { label: 'خطای تغییر رمز', value: 'password_reset.failed' },
   { label: 'خطای عملیات تغییر رمز', value: 'password_reset.error' },
+  { label: 'تشخیص هشدار امنیتی', value: 'alert.detected' },
+  { label: 'رسیدگی به هشدار امنیتی', value: 'alert.resolved' },
 ]
-const moduleOptions = [{ label: 'فیش حقوقی', value: 'Payroll' }, { label: 'احراز هویت', value: 'Auth' }]
+const moduleOptions = [{ label: 'فیش حقوقی', value: 'Payroll' }, { label: 'احراز هویت', value: 'Auth' }, { label: 'امنیت', value: 'Security' }]
 const statusOptions = [{ label: 'موفق', value: 'success' }, { label: 'ناموفق', value: 'failed' }]
+const alertStatusOptions = [{ label: 'در حال رسیدگی', value: 'open' }, { label: 'رسیدگی‌شده', value: 'resolved' }]
 
 // فیلتر سریع وضعیت، بالای جدول
 const quickStatus = [
@@ -262,6 +324,12 @@ const error = ref('')
 const page = ref(1)
 const lastPage = ref(1)
 const total = ref(0)
+const alerts = ref([])
+const alertStatus = ref('open')
+const alertTotal = ref(0)
+const alertsLoading = ref(false)
+const alertsError = ref('')
+const resolvingAlert = ref(null)
 
 function dateValue(value) {
   if (!value) return undefined
@@ -276,6 +344,9 @@ function timePart(value) {
 }
 function actionLabel(action) {
   return actionOptions.find((item) => item.value === action)?.label || action
+}
+function severityLabel(severity) {
+  return ({ high: 'زیاد', medium: 'متوسط', low: 'کم' })[severity] || severity
 }
 function moduleLabel(module) {
   return moduleOptions.find((item) => item.value === module)?.label || module || '—'
@@ -349,7 +420,61 @@ async function loadLogs() {
     loading.value = false
   }
 }
-onMounted(loadLogs)
+
+console.log('payrollApi:', payrollApi)
+console.log('getSecurityAlerts:', payrollApi.getSecurityAlerts)
+async function loadAlerts() {
+  alertsLoading.value = true
+  alertsError.value = ''
+  try {
+    const { data } = await payrollApi.getSecurityAlerts({ status: alertStatus.value, per_page: 100 })
+    alerts.value = data.data || []
+    alertTotal.value = data.total || 0
+  } catch (err) {
+    console.error('Security Alerts API Error:', {
+      message: err.message,
+      code: err.code,
+      status: err.response?.status,
+      response: err.response?.data,
+      url: err.config?.url,
+      baseURL: err.config?.baseURL,
+      method: err.config?.method
+    })
+
+    alertsError.value = getSecurityAlertsErrorMessage(err)
+  } finally {
+    alertsLoading.value = false
+  }
+}
+function getSecurityAlertsErrorMessage(err) {
+  const status = err.response?.status
+  if (status === 401) return 'نشست شما منقضی شده است؛ دوباره وارد سامانه شوید.'
+  if (status === 403) return 'دسترسی مشاهده هشدارهای امنیتی برای حساب شما فعال نیست. مجوز Log.view را بررسی کنید.'
+  if (status === 404) return 'مسیر دریافت هشدارها در سرور پیدا نشد. نسخه API سرور را بررسی کنید.'
+  if (status >= 500) return `سرور هنگام دریافت هشدارها خطا داد (HTTP ${status}).`
+  if (!err.response) return 'ارتباط با سرور برقرار نشد. اتصال شبکه و نشانی API را بررسی کنید.'
+  return err.response.data?.message || `دریافت هشدارهای امنیتی ناموفق بود (HTTP ${status}).`
+}
+async function resolveAlert(alert) {
+  resolvingAlert.value = alert.id
+  try {
+    await payrollApi.resolveSecurityAlert(alert.id)
+    await loadAlerts()
+  } catch (err) {
+    alertsError.value = err.response?.data?.message || 'ثبت رسیدگی به هشدار ناموفق بود.'
+  } finally {
+    resolvingAlert.value = null
+  }
+}
+let refreshTimer
+onMounted(async () => {
+  await Promise.all([loadLogs(), loadAlerts()])
+  refreshTimer = window.setInterval(() => {
+    loadLogs()
+    loadAlerts()
+  }, 30000)
+})
+onUnmounted(() => window.clearInterval(refreshTimer))
 </script>
 
 <style scoped>
@@ -429,6 +554,64 @@ onMounted(loadLogs)
   border: 1px solid var(--pl-border);
   border-radius: 18px;
   box-shadow: 0 1px 2px rgba(20, 33, 61, 0.05), 0 14px 32px -20px rgba(20, 33, 61, 0.25);
+}
+
+.pl-alerts {
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  border-color: color-mix(in srgb, #dc2626 24%, var(--pl-border));
+}
+.pl-alerts__head,
+.pl-alerts__tools,
+.pl-alert__title-row,
+.pl-alert__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.pl-alerts__head { margin-bottom: 1rem; }
+.pl-alerts__head h2 { margin: 0; font-size: 1.1rem; font-weight: 800; }
+.pl-alerts__head p { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--pl-muted); }
+.pl-alerts__tools { justify-content: flex-end; }
+.pl-alerts__list { display: grid; gap: 0.75rem; }
+.pl-alert {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--pl-border);
+  border-right: 4px solid #d97706;
+  border-radius: 12px;
+  background: color-mix(in srgb, #f59e0b 5%, var(--pl-surface));
+}
+.pl-alert--high { border-right-color: #dc2626; background: color-mix(in srgb, #ef4444 6%, var(--pl-surface)); }
+.pl-alert--low { border-right-color: #2563eb; background: color-mix(in srgb, #3b82f6 5%, var(--pl-surface)); }
+.pl-alert__mark {
+  display: grid; place-items: center; flex: 0 0 2.5rem; height: 2.5rem;
+  border-radius: 50%; color: #b45309; background: color-mix(in srgb, #f59e0b 15%, transparent);
+}
+.pl-alert--high .pl-alert__mark { color: #b91c1c; background: color-mix(in srgb, #ef4444 15%, transparent); }
+.pl-alert__body { min-width: 0; flex: 1; }
+.pl-alert__title-row { justify-content: flex-start; flex-wrap: wrap; }
+.pl-alert__title-row h3 { margin: 0; font-size: 0.95rem; font-weight: 800; }
+.pl-alert__severity { padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.75rem; background: rgba(180,83,9,.12); color: #92400e; }
+.pl-alert--high .pl-alert__severity { color: #991b1b; background: rgba(185,28,28,.1); }
+.pl-alert__body > p { margin: 0.35rem 0 0.6rem; color: var(--pl-muted); font-size: 0.85rem; }
+.pl-alert__meta { justify-content: flex-start; flex-wrap: wrap; color: var(--pl-muted); font-size: 0.78rem; }
+.pl-alert__meta span { display: inline-flex; align-items: center; gap: 0.3rem; }
+.pl-alert__resolved { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.25rem 0.4rem; color: var(--pl-ok); white-space: nowrap; font-size: 0.85rem; }
+.pl-alert__resolved small { grid-column: 2; color: var(--pl-muted); font-size: 0.72rem; }
+.pl-alerts__empty,
+.pl-alerts__footer { padding: 0.75rem 0; color: var(--pl-muted); font-size: 0.88rem; }
+.pl-alerts__empty { display: flex; align-items: center; gap: 0.5rem; }
+.pl-alerts__empty i { color: var(--pl-ok); }
+.pl-alerts__footer { text-align: center; }
+
+@media (max-width: 760px) {
+  .pl-alert { align-items: flex-start; flex-wrap: wrap; }
+  .pl-alert__body { flex-basis: calc(100% - 3.5rem); }
+  .pl-alert > :deep(.p-button) { margin-right: 3.5rem; }
 }
 
 /* ───────────── فیلترها ───────────── */

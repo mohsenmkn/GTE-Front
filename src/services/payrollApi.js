@@ -2,9 +2,20 @@
 import axios from 'axios';
 import api from '@/api/axios.js'
 
-export const payrollApi = {
+export const payrollApi =
+    {
     getLogs(params = {}) {
         return api.get('/system/logs', { params });
+    },
+
+
+    getSecurityAlerts(params = {}) {
+            return api.get('/system/security-alerts', { params });
+        },
+
+
+    resolveSecurityAlert(id) {
+        return api.patch(`/system/security-alerts/${id}/resolve`);
     },
     /**
      * دریافت لیست ماه‌های موجود

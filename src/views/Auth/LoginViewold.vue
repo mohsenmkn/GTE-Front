@@ -376,7 +376,11 @@ const handleLogin = async () => {
       }
     })
 
-    if (error.response?.status === 429) {
+    if (error.response?.status === 429 && error.response?.data?.locked === true) {
+      errorMessage.value = error.response.data.message || 'این حساب و مرورگر برای ۵ دقیقه موقتاً مسدود شده است.'
+      requireCaptcha.value = false
+      captchaInput.value = ''
+    } else if (error.response?.status === 429) {
       requireCaptcha.value = true
       await fetchCaptcha()
     } else if (error.response?.status === 400 && requireCaptcha.value) {
