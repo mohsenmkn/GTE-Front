@@ -379,6 +379,34 @@ const router = createRouter({
 // ═══════ منابع انسانی ═══════
 
                 {
+                    path: '/api-management/clients',
+                    name: 'api-management.clients',
+                    component: () => import('@/views/ApiManagement/ApiManagementView.vue'),
+                    props: { section: 'clients' },
+                    meta: { title: 'مدیریت دسترسی‌های API', requiresAuth: true, permission: 'hr.manage' },
+                },
+                {
+                    path: '/api-management/personnel',
+                    name: 'api-management.personnel',
+                    component: () => import('@/views/ApiManagement/ApiManagementView.vue'),
+                    props: { section: 'personnel' },
+                    meta: { title: 'API پرسنل', requiresAuth: true, permission: 'hr.manage' },
+                },
+                {
+                    path: '/api-management/hierarchy',
+                    name: 'api-management.hierarchy',
+                    component: () => import('@/views/ApiManagement/ApiManagementView.vue'),
+                    props: { section: 'hierarchy' },
+                    meta: { title: 'API سلسله‌مراتب سازمانی', requiresAuth: true, permission: 'hr.manage' },
+                },
+                {
+                    path: '/api-management/attendance',
+                    name: 'api-management.attendance',
+                    component: () => import('@/views/ApiManagement/ApiManagementView.vue'),
+                    props: { section: 'attendance' },
+                    meta: { title: 'API کنترل تردد', requiresAuth: true, permission: 'hr.manage' },
+                },
+                {
                     path: '/hr/dashboard',
                     name: 'hr.dashboard',
                     component: () => import('@/views/HR/HRDashboard.vue'),

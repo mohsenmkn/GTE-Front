@@ -4,7 +4,7 @@ import {
     BarChart3, TrendingDown, UserCog, CalendarCheck, Building2, LibraryBig,Link,
     BookOpen, Bookmark, Book, BookmarkCheck, MessageSquareWarning, PlusCircle,DollarSign,
     ShieldAlert, List, Network, FileSignature, Inbox,User,Activity, AlertTriangle, Eye, Mail, Calendar, Phone, CreditCard,
-    Briefcase, Lock, Shield, Settings, Bell, Search, X, Check, Plus, Edit, Trash2,Truck,
+    Briefcase, Lock, Shield, Settings, Bell, Search, X, Check, Plus, Edit, Trash2,Truck, KeyRound,
     Save,Filter,Download,Upload,RefreshCw,Info,HelpCircle,LogOut, ChevronDown,UsersRound,MapPin, Receipt,
     ChevronLeft, ChevronRight, ArrowLeft, ArrowRight,ClipboardCheck,ClipboardList,FileBarChart,Gauge,Database,Wrench
 } from 'lucide-vue-next'
@@ -353,6 +353,18 @@ export const menuItems = [
     },
 
     // ═══════ منابع انسانی ═══════
+    {
+        key: 'api-management',
+        label: 'مدیریت API',
+        icon: KeyRound,
+        access: 'hr.manage',
+        children: [
+            { key: 'api-management-clients', label: 'مدیریت دسترسی‌ها', to: '/api-management/clients', access: 'hr.manage', icon: KeyRound },
+            { key: 'api-management-personnel', label: 'API پرسنل', to: '/api-management/personnel', access: 'hr.manage', icon: Users },
+            { key: 'api-management-hierarchy', label: 'API سلسله‌مراتب سازمانی', to: '/api-management/hierarchy', access: 'hr.manage', icon: Network },
+            { key: 'api-management-attendance', label: 'API کنترل تردد', to: '/api-management/attendance', access: 'hr.manage', icon: Clock },
+        ],
+    },
     {
         key: 'hr',
         label: 'منابع انسانی',
