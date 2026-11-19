@@ -82,7 +82,7 @@ import Button from 'primevue/button';
 import Badge from 'primevue/badge';
 import ProgressSpinner from 'primevue/progressspinner';
 import Toast from 'primevue/toast';
-import { libraryApi } from '@/services/libraryApi.js';
+import { libraryapi } from '@/services/libraryapi.js';
 
 const toast = useToast();
 
@@ -93,7 +93,7 @@ const unreadCount = ref(0);
 const loadNotifications = async () => {
   loading.value = true;
   try {
-    const response = await libraryApi.getMyNotifications();
+    const response = await libraryapi.getMyNotifications();
     notifications.value = response.data.data || [];
     unreadCount.value = response.data.meta?.unread_count || 0;
   } catch (error) {
@@ -105,7 +105,7 @@ const loadNotifications = async () => {
 
 const markRead = async (notification) => {
   try {
-    await libraryApi.markAsRead(notification.id);
+    await libraryapi.markAsRead(notification.id);
     notification.is_read = true;
     unreadCount.value = Math.max(0, unreadCount.value - 1);
   } catch (error) {
@@ -115,7 +115,7 @@ const markRead = async (notification) => {
 
 const markAllRead = async () => {
   try {
-    await libraryApi.markAllAsRead();
+    await libraryapi.markAllAsRead();
     notifications.value.forEach(n => (n.is_read = true));
     unreadCount.value = 0;
     toast.add({

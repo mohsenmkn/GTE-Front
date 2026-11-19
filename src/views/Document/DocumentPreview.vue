@@ -117,7 +117,7 @@ import { ref, computed, watch } from 'vue'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import { documentService } from '@/services/documentService'
-const BASE_URL = import.meta.env.URLBACK || 'https://apiomrani.gttmco.ir'
+const BASE_URL = import.meta.env.VITE_URL_BACK || (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/v1\/?$/, '')
 import {useAuthStore} from "@/stores/auth.js";
 const authStore = useAuthStore()
 

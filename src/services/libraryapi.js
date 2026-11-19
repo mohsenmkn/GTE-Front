@@ -1,7 +1,7 @@
-// resources/js/Modules/Library/Services/libraryApi.js
+// resources/js/Modules/Library/Services/libraryapi.js
 import axios from '@/api/axios.js';
 
-export const libraryApi = {
+export const libraryapi = {
     // ═══════ کتاب‌ها ═══════
     getBooks(filters = {}) {
         return axios.get('/library/books', { params: filters });

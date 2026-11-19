@@ -144,7 +144,7 @@ import Tag from 'primevue/tag';
 import Badge from 'primevue/badge';
 import ProgressSpinner from 'primevue/progressspinner';
 import Paginator from 'primevue/paginator';
-import { libraryApi } from '@/services/libraryApi.js';
+import { libraryapi } from '@/services/libraryapi.js';
 
 const router = useRouter();
 
@@ -185,7 +185,7 @@ const loadBooks = async (page = 1) => {
     if (filters.category_id) params.category_id = filters.category_id;
     if (filters.onlyAvailable) params.availability = 'available';
 
-    const response = await libraryApi.getBooks(params);
+    const response = await libraryapi.getBooks(params);
     books.value = response.data.data || [];
 
     if (response.data.meta) {
@@ -200,7 +200,7 @@ const loadBooks = async (page = 1) => {
 
 const loadCategories = async () => {
   try {
-    const response = await libraryApi.getCategories();
+    const response = await libraryapi.getCategories();
     categories.value = response.data.data || [];
   } catch (error) {
     console.error('خطا در دریافت دسته‌بندی‌ها:', error);

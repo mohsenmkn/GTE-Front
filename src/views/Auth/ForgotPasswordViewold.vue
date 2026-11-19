@@ -1,699 +1,363 @@
 <template>
-  <main class="auth-page" dir="rtl">
-    <!-- Background -->
-    <div class="auth-background" aria-hidden="true">
+  <main class="forgot-page" dir="rtl">
+    <div class="forgot-background">
       <div class="background-shape shape-one"></div>
       <div class="background-shape shape-two"></div>
+      <div class="background-shape shape-three"></div>
       <div class="background-grid"></div>
+      <div class="floating-icons">
+        <i class="pi pi-key floating-icon icon-1"></i>
+        <i class="pi pi-shield floating-icon icon-2"></i>
+        <i class="pi pi-lock floating-icon icon-3"></i>
+        <i class="pi pi-mobile floating-icon icon-4"></i>
+        <i class="pi pi-check-circle floating-icon icon-5"></i>
+      </div>
     </div>
-
-    <section class="auth-shell">
-      <div class="auth-card">
-
-        <!-- Header -->
-        <header class="auth-header">
+    <div class="forgot-shell">
+      <div class="forgot-card">
+        <!-- هدر کارت -->
+        <header class="card-header">
           <div class="brand-mark">
-            <i
-                :class="currentStepIcon"
-                aria-hidden="true"
-            ></i>
+            <i :class="currentStepIcon"></i>
           </div>
-
-          <div class="mt-5">
-            <h1 class="auth-title">
-              {{ currentStepTitle }}
-            </h1>
-
-            <p class="auth-subtitle">
-              {{ currentStepDescription }}
-            </p>
-          </div>
+          <h1 class="card-title">{{ currentStepTitle }}</h1>
+          <p class="card-description">{{ currentStepDescription }}</p>
         </header>
 
-        <!-- Step Indicator -->
+        <!-- استپر مراحل -->
         <div class="stepper">
-          <div
-              v-for="item in steps"
-              :key="item.id"
-              class="step-item"
-              :class="{
-              active: step === item.id,
-              completed: step > item.id
-            }"
-          >
-            <div class="step-circle">
-              <i
-                  v-if="step > item.id"
-                  class="pi pi-check"
-              ></i>
-
-              <span v-else>
-                {{ item.id }}
-              </span>
-            </div>
-
-            <span class="step-label">
-              {{ item.label }}
-            </span>
+          <div class="stepper-track">
+            <div class="stepper-progress" :style="{ width: progressWidth }"></div>
           </div>
-
-          <div class="step-line">
-            <span
-                :style="{ width: progressWidth }"
-            ></span>
+          <div class="stepper-steps">
+            <div
+                v-for="s in steps"
+                :key="s.number"
+                class="step"
+                :class="{
+            active: step === s.number,
+            completed: step > s.number
+          }"
+            >
+              <div class="step-circle">
+                <i v-if="step > s.number" class="pi pi-check"></i>
+                <span v-else>{{ s.number }}</span>
+              </div>
+              <span class="step-label">{{ s.title }}</span>
+            </div>
           </div>
         </div>
 
-        <!-- Body -->
-        <div class="auth-body">
+        <!-- پیام خطا -->
+        <Transition name="message">
+          <div v-if="errorMessage" class="error-alert" role="alert">
+            <i class="pi pi-exclamation-triangle"></i>
+            <span>{{ errorMessage }}</span>
+          </div>
+        </Transition>
 
-          <!-- =================================================
-               STEP 1
-          ================================================== -->
+        <!-- پیام موفقیت -->
+        <Transition name="message">
+          <div v-if="successMessage" class="success-alert" role="alert">
+            <i class="pi pi-check-circle"></i>
+            <span>{{ successMessage }}</span>
+          </div>
+        </Transition>
 
-          <form
-              v-if="step === 1"
-              class="auth-form"
-              @submit.prevent="sendOtp"
-          >
-            <div class="field-group">
-              <label
-                  for="mobile"
-                  class="field-label"
-              >
-                شماره موبایل
-                <span class="required">*</span>
-              </label>
-
-              <div class="input-wrapper">
-                <i class="pi pi-mobile input-icon"></i>
-
-                <InputText
-                    id="mobile"
-                    v-model="mobile"
-                    type="tel"
-                    inputmode="numeric"
-                    autocomplete="tel"
-                    maxlength="11"
-                    dir="ltr"
-                    placeholder="09123456789"
-                    class="auth-input mobile-input"
-                    @input="normalizeMobile"
-                />
-              </div>
-
-              <small class="field-hint">
-                کد تأیید به شماره موبایل ثبت‌شده شما ارسال خواهد شد.
-              </small>
+        <!-- مرحله ۱: ورود شماره موبایل -->
+        <form v-if="step === 1" class="auth-form" @submit.prevent="sendOtp">
+          <div class="field-group">
+            <label for="mobile" class="field-label">
+              شماره موبایل <span class="required">*</span>
+            </label>
+            <div class="input-wrapper">
+              <i class="pi pi-mobile input-icon"></i>
+              <InputText
+                  id="mobile"
+                  v-model="mobile"
+                  type="tel"
+                  inputmode="numeric"
+                  dir="ltr"
+                  maxlength="11"
+                  placeholder="09123456789"
+                  class="auth-input"
+                  :disabled="loading"
+                  @input="normalizeMobile"
+                  :class="{ invalid: mobileError }"
+              />
             </div>
+            <p class="field-hint" v-if="!mobileError">
+              کد تأیید به این شماره پیامک خواهد شد.
+            </p>
+            <p class="field-error" v-if="mobileError">{{ mobileError }}</p>
+          </div>
 
-            <transition name="message">
-              <div
-                  v-if="errorMessage"
-                  class="error-alert"
-                  role="alert"
-              >
-                <i class="pi pi-exclamation-triangle"></i>
-                <span>{{ errorMessage }}</span>
-              </div>
-            </transition>
+          <button type="submit" class="submit-btn" :disabled="loading || mobile.length < 11">
+            <template v-if="!loading">
+              <i class="pi pi-send"></i>
+              ارسال کد تأیید
+            </template>
+            <template v-else>
+              در حال ارسال...
+              <i class="pi pi-spin pi-spinner"></i>
+            </template>
+          </button>
 
-            <Button
-                type="submit"
-                class="primary-button"
-                :loading="loading"
-                :disabled="loading"
-            >
-              <template #default>
-                <span v-if="!loading">
-                  دریافت کد تأیید
-                </span>
-
-                <span v-else>
-                  در حال ارسال...
-                </span>
-
-                <i
-                    v-if="!loading"
-                    class="pi pi-arrow-left mr-2"
-                ></i>
-              </template>
-            </Button>
-
-            <button
-                type="button"
-                class="back-link"
-                @click="goToLogin"
-            >
+          <div class="back-link-wrapper">
+            <router-link to="/login" class="back-link">
               <i class="pi pi-arrow-right"></i>
               بازگشت به صفحه ورود
+            </router-link>
+          </div>
+        </form>
+
+        <!-- مرحله ۲: وارد کردن کد تأیید -->
+        <form v-else-if="step === 2" class="auth-form" @submit.prevent="verifyOtp">
+          <div class="mobile-summary">
+            <div class="summary-content">
+              <i class="pi pi-mobile"></i>
+              <span>
+            کد تأیید به شماره <strong>{{ formattedMobile }}</strong> ارسال شد.
+          </span>
+            </div>
+            <button type="button" class="edit-btn" @click="editMobile" title="ویرایش شماره">
+              <i class="pi pi-pencil"></i>
+              ویرایش
             </button>
-          </form>
+          </div>
 
-          <!-- =================================================
-               STEP 2
-          ================================================== -->
-
-          <div
-              v-else-if="step === 2"
-              class="auth-form"
-          >
-            <!-- Mobile Summary -->
-            <div class="mobile-summary">
-              <div class="summary-icon">
-                <i class="pi pi-mobile"></i>
-              </div>
-
-              <div class="summary-content">
-                <span>
-                  کد تأیید به این شماره ارسال شد:
-                </span>
-
-                <strong dir="ltr">
-                  {{ formattedMobile }}
-                </strong>
-              </div>
-
-              <button
-                  type="button"
-                  class="edit-mobile"
-                  :disabled="loading"
-                  @click="editMobile"
-              >
-                ویرایش
-              </button>
-            </div>
-
-            <!-- OTP -->
-            <div class="otp-section">
-              <label class="field-label text-center">
-                کد ۵ رقمی پیامک‌شده را وارد کنید
-              </label>
-
-              <div
-                  class="otp-inputs"
-                  dir="ltr"
+          <div class="field-group">
+            <label class="field-label center-label">کد ۵ رقمی پیامک شده را وارد کنید</label>
+            <div class="otp-wrapper" dir="ltr">
+              <input
+                  v-for="(digit, idx) in otpDigits"
+                  :key="idx"
+                  :ref="el => setOtpRef(el, idx)"
+                  v-model="otpDigits[idx]"
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  maxlength="1"
+                  class="otp-box"
+                  :class="{ filled: digit !== '', error: errorMessage }"
+                  @input="e => handleOtpInput(e, idx)"
+                  @keydown="e => handleBackspace(e, idx)"
                   @paste="handlePaste"
-              >
-                <input
-                    v-for="(digit, index) in otpDigits"
-                    :key="index"
-                    :ref="el => setOtpRef(el, index)"
-                    v-model="otpDigits[index]"
-                    type="text"
-                    inputmode="numeric"
-                    autocomplete="one-time-code"
-                    maxlength="1"
-                    class="otp-input"
-                    :class="{
-                    filled: otpDigits[index],
-                    error: !!errorMessage
-                  }"
-                    :aria-label="`رقم ${index + 1} کد تأیید`"
-                    @input="handleOtpInput($event, index)"
-                    @keydown.backspace="handleBackspace($event, index)"
-                    @keydown.left.prevent="focusOtp(index - 1)"
-                    @keydown.right.prevent="focusOtp(index + 1)"
-                />
-              </div>
-            </div>
-
-            <!-- Timer -->
-            <div class="otp-timer">
-              <template v-if="timeLeft > 0">
-                <span>
-                  امکان ارسال مجدد تا
-                </span>
-
-                <strong dir="ltr">
-                  {{ formattedTime }}
-                </strong>
-              </template>
-
-              <button
-                  v-else
-                  type="button"
-                  class="resend-button"
                   :disabled="loading"
-                  @click="resendOtp"
-              >
-                <i class="pi pi-refresh"></i>
-                ارسال مجدد کد
-              </button>
+              />
             </div>
+          </div>
 
-            <!-- Messages -->
-            <transition name="message">
-              <div
-                  v-if="errorMessage"
-                  class="error-alert"
-                  role="alert"
-              >
-                <i class="pi pi-exclamation-triangle"></i>
-                <span>{{ errorMessage }}</span>
-              </div>
-            </transition>
-
-            <transition name="message">
-              <div
-                  v-if="successMessage"
-                  class="success-alert"
-                  role="status"
-              >
-                <i class="pi pi-check-circle"></i>
-                <span>{{ successMessage }}</span>
-              </div>
-            </transition>
-
-            <!-- Verify -->
-            <Button
-                type="button"
-                class="primary-button"
-                :loading="loading"
-                :disabled="loading || otp.value?.length === 5"
-                @click="verifyOtp"
-            >
-              <template #default>
-                <span v-if="!loading">
-                  تأیید کد و ادامه
-                </span>
-
-                <span v-else>
-                  در حال بررسی...
-                </span>
-
-                <i
-                    v-if="!loading"
-                    class="pi pi-arrow-left mr-2"
-                ></i>
-              </template>
-            </Button>
-
+          <!-- تایمر و ارسال مجدد -->
+          <div class="timer-wrapper">
+        <span v-if="timeLeft > 0" class="timer-countdown">
+          <i class="pi pi-clock"></i>
+          ارسال مجدد تا {{ formattedTime }}
+        </span>
             <button
+                v-else
                 type="button"
-                class="back-link"
+                class="resend-btn"
+                @click="resendOtp"
                 :disabled="loading"
-                @click="editMobile"
             >
+              <i class="pi pi-refresh" :class="{ 'pi-spin': loading }"></i>
+              ارسال مجدد کد تأیید
+            </button>
+          </div>
+
+          <button type="submit" class="submit-btn" :disabled="loading || otp.length < 5">
+            <template v-if="!loading">
+              <i class="pi pi-check"></i>
+              تأیید و ادامه
+            </template>
+            <template v-else>
+              در حال تأیید...
+              <i class="pi pi-spin pi-spinner"></i>
+            </template>
+          </button>
+
+          <div class="back-link-wrapper">
+            <button type="button" class="back-link" @click="editMobile">
               <i class="pi pi-arrow-right"></i>
               تغییر شماره موبایل
             </button>
           </div>
+        </form>
 
-          <!-- =================================================
-               STEP 3
-          ================================================== -->
+        <!-- مرحله ۳: تعیین رمز عبور جدید -->
+        <form v-else-if="step === 3" class="auth-form" @submit.prevent="resetPassword">
+          <div class="field-group">
+            <label for="new-password" class="field-label">
+              رمز عبور جدید <span class="required">*</span>
+            </label>
+            <div class="input-wrapper password-wrapper">
+              <i class="pi pi-lock input-icon left-icon"></i>
+              <Password
+                  id="new-password"
+                  v-model="newPassword"
+                  :feedback="false"
+                  toggleMask
+                  placeholder="••••••••"
+                  inputClass="auth-input password-input"
+                  dir="ltr"
+              />
+            </div>
+          </div>
 
-          <form
-              v-else
-              class="auth-form"
-              @submit.prevent="resetPassword"
+          <!-- قوانین رمز عبور -->
+          <div class="password-rules">
+            <div class="rule" :class="{ valid: passwordRules.minLength }">
+              <i :class="passwordRules.minLength ? 'pi pi-check' : 'pi pi-circle'"></i>
+              <span>حداقل ۶ کاراکتر</span>
+            </div>
+            <div class="rule" :class="{ valid: passwordRules.hasLetter }">
+              <i :class="passwordRules.hasLetter ? 'pi pi-check' : 'pi pi-circle'"></i>
+              <span>شامل حروف لاتین</span>
+            </div>
+            <div class="rule" :class="{ valid: passwordRules.hasNumber }">
+              <i :class="passwordRules.hasNumber ? 'pi pi-check' : 'pi pi-circle'"></i>
+              <span>شامل عدد</span>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="confirm-password" class="field-label">
+              تکرار رمز عبور <span class="required">*</span>
+            </label>
+            <div class="input-wrapper password-wrapper">
+              <i class="pi pi-lock input-icon left-icon"></i>
+              <Password
+                  id="confirm-password"
+                  v-model="confirmPassword"
+                  :feedback="false"
+                  toggleMask
+                  placeholder="••••••••"
+                  inputClass="auth-input password-input"
+                  dir="ltr"
+                  :class="{ invalid: confirmPassword && newPassword !== confirmPassword }"
+              />
+            </div>
+            <p
+                v-if="confirmPassword && newPassword !== confirmPassword"
+                class="field-error"
+            >
+              تکرار رمز عبور با رمز عبور جدید مطابقت ندارد.
+            </p>
+          </div>
+
+          <button
+              type="submit"
+              class="submit-btn success-btn"
+              :disabled="loading || !canResetPassword"
           >
-            <div class="field-group">
-              <label
-                  for="newPassword"
-                  class="field-label"
-              >
-                رمز عبور جدید
-                <span class="required">*</span>
-              </label>
+            <template v-if="!loading">
+              <i class="pi pi-lock"></i>
+              ثبت رمز عبور جدید و ورود
+            </template>
+            <template v-else>
+              در حال ثبت...
+              <i class="pi pi-spin pi-spinner"></i>
+            </template>
+          </button>
 
-              <div class="password-wrapper">
+          <div class="back-link-wrapper">
+            <router-link to="/login" class="back-link">
+              انصراف و بازگشت به صفحه ورود
+            </router-link>
+          </div>
+        </form>
 
-
-                <Password
-                    id="newPassword"
-                    v-model="newPassword"
-                    toggleMask
-                    :feedback="false"
-                    autocomplete="new-password"
-                    inputClass="auth-password-input"
-                    class="w-full"
-                    fluid
-                />
-              </div>
-
-              <!-- Password Rules -->
-              <div class="password-rules">
-                <div
-                    class="password-rule"
-                    :class="{ valid: passwordRules.minLength }"
-                >
-                  <i
-                      :class="
-                      passwordRules.minLength
-                        ? 'pi pi-check-circle'
-                        : 'pi pi-circle'
-                    "
-                  ></i>
-
-                  <span>
-                    حداقل ۶ کاراکتر
-                  </span>
-                </div>
-
-                <div
-                    class="password-rule"
-                    :class="{ valid: passwordRules.hasLetter }"
-                >
-                  <i
-                      :class="
-                      passwordRules.hasLetter
-                        ? 'pi pi-check-circle'
-                        : 'pi pi-circle'
-                    "
-                  ></i>
-
-                  <span>
-                    حداقل یک حرف
-                  </span>
-                </div>
-
-                <div
-                    class="password-rule"
-                    :class="{ valid: passwordRules.hasNumber }"
-                >
-                  <i
-                      :class="
-                      passwordRules.hasNumber
-                        ? 'pi pi-check-circle'
-                        : 'pi pi-circle'
-                    "
-                  ></i>
-
-                  <span>
-                    حداقل یک عدد
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div class="field-group">
-              <label
-                  for="confirmPassword"
-                  class="field-label"
-              >
-                تکرار رمز عبور
-                <span class="required">*</span>
-              </label>
-
-              <div
-                  class="password-wrapper"
-                  :class="{
-                  'password-error':
-                    confirmPassword &&
-                    confirmPassword !== newPassword
-                }"
-              >
-
-
-                <Password
-                    id="confirmPassword"
-                    v-model="confirmPassword"
-                    toggleMask
-                    :feedback="false"
-                    autocomplete="new-password"
-                    inputClass="auth-password-input"
-                    class="w-full"
-                    fluid
-                />
-
-
-
-
-              </div>
-
-              <small
-                  v-if="
-                  confirmPassword &&
-                  confirmPassword !== newPassword
-                "
-                  class="field-error"
-              >
-                <i class="pi pi-exclamation-circle"></i>
-                رمز عبور و تکرار آن یکسان نیستند.
-              </small>
-            </div>
-
-            <!-- Messages -->
-            <transition name="message">
-              <div
-                  v-if="errorMessage"
-                  class="error-alert"
-                  role="alert"
-              >
-                <i class="pi pi-exclamation-triangle"></i>
-                <span>{{ errorMessage }}</span>
-              </div>
-            </transition>
-
-            <transition name="message">
-              <div
-                  v-if="successMessage"
-                  class="success-alert"
-                  role="status"
-              >
-                <i class="pi pi-check-circle"></i>
-                <span>{{ successMessage }}</span>
-              </div>
-            </transition>
-
-            <!-- Reset -->
-            <Button
-                type="submit"
-                class="primary-button success-button"
-                :loading="loading"
-                :disabled="loading || !canResetPassword"
-            >
-              <template #default>
-                <span v-if="!loading">
-                  تغییر رمز عبور
-                </span>
-
-                <span v-else>
-                  در حال تغییر رمز...
-                </span>
-
-                <i
-                    v-if="!loading"
-                    class="pi pi-check mr-2"
-                ></i>
-              </template>
-            </Button>
-
-            <button
-                type="button"
-                class="back-link"
-                :disabled="loading"
-                @click="goToLogin"
-            >
-              <i class="pi pi-arrow-right"></i>
-              بازگشت به صفحه ورود
-            </button>
-          </form>
-
-        </div>
-
-        <!-- Footer -->
-        <footer class="auth-footer">
+        <!-- فوتر -->
+        <footer class="card-footer">
           <div class="footer-divider">
             <span></span>
             <i class="pi pi-shield"></i>
             <span></span>
           </div>
-
-          <p>
-            فرآیند بازیابی رمز عبور به‌صورت امن انجام می‌شود.
+          <p class="footer-text">
+            دسترسی شما به سامانه به‌صورت امن مدیریت می‌شود.
           </p>
-
-          <p class="footer-brand">
-            سیستم یکپارچه گهرترابر
-          </p>
+          <p class="footer-version">سامانه مدیریت یکپارچه قراردادها</p>
         </footer>
-
       </div>
-    </section>
+    </div>
   </main>
 </template>
 
 <script setup>
-import {
-  ref,
-  computed,
-  onUnmounted,
-  watch,
-  nextTick
-} from 'vue'
-
+import { ref, reactive, computed, watch, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from '@/api/axios.js'
-
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
-import Button from 'primevue/button'
-
-/* =====================================================
-   Router
-===================================================== */
+import axios from '@/api/axios.js'
 
 const router = useRouter()
 
-/* =====================================================
-   Config
-===================================================== */
-
-const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    'http://127.0.0.1:8000/api/v1'
-
-/* =====================================================
-   Steps
-===================================================== */
-
+// --- حالت‌های عمومی ---
 const step = ref(1)
-
 const steps = [
-  {
-    id: 1,
-    label: 'شماره موبایل'
-  },
-  {
-    id: 2,
-    label: 'تأیید کد'
-  },
-  {
-    id: 3,
-    label: 'رمز جدید'
-  }
+  { number: 1, title: 'شماره همراه' },
+  { number: 2, title: 'کد تأیید' },
+  { number: 3, title: 'رمز جدید' }
 ]
 
+const mobile = ref('')
+const otp = ref('')
+const otpDigits = reactive(['', '', '', '', ''])
+const newPassword = ref('')
+const confirmPassword = ref('')
+const loading = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
+const resendCount = ref(0)
+const timeLeft = ref(120)
+const otpInputs = ref([])
+let timerInterval = null
+
+// --- مقادیر محاسباتی ---
 const currentStepTitle = computed(() => {
-  if (step.value === 1) {
-    return 'بازیابی رمز عبور'
-  }
-
-  if (step.value === 2) {
-    return 'تأیید شماره موبایل'
-  }
-
-  return 'ایجاد رمز عبور جدید'
+  if (step.value === 1) return 'بازیابی رمز عبور'
+  if (step.value === 2) return 'تأیید شماره همراه'
+  return 'تعیین رمز عبور جدید'
 })
 
 const currentStepDescription = computed(() => {
-  if (step.value === 1) {
-    return 'برای بازیابی رمز عبور، شماره موبایل خود را وارد کنید.'
-  }
-
-  if (step.value === 2) {
-    return 'کد تأیید ارسال‌شده به شماره موبایل خود را وارد کنید.'
-  }
-
-  return 'یک رمز عبور جدید برای حساب کاربری خود انتخاب کنید.'
+  if (step.value === 1)
+    return 'جهت بازیابی حساب کاربری خود در سامانه قراردادها، شماره موبایل ثبت‌شده را وارد نمایید'
+  if (step.value === 2) return 'کد ۵ رقمی پیامک شده را وارد کنید'
+  return 'یک رمز عبور قوی و مطمئن برای حساب خود تعیین نمایید'
 })
 
 const currentStepIcon = computed(() => {
-  if (step.value === 1) {
-    return 'pi pi-key'
-  }
-
-  if (step.value === 2) {
-    return 'pi pi-shield'
-  }
-
+  if (step.value === 1) return 'pi pi-mobile'
+  if (step.value === 2) return 'pi pi-key'
   return 'pi pi-lock'
 })
 
 const progressWidth = computed(() => {
-  if (step.value === 1) {
-    return '0%'
-  }
-
-  if (step.value === 2) {
-    return '50%'
-  }
-
+  if (step.value === 1) return '0%'
+  if (step.value === 2) return '50%'
   return '100%'
 })
 
-/* =====================================================
-   Form
-===================================================== */
-
-const mobile = ref('')
-const otp = ref('')
-
-const otpDigits = ref([
-  '',
-  '',
-  '',
-  '',
-  ''
-])
-
-const newPassword = ref('')
-const confirmPassword = ref('')
-
-/* =====================================================
-   State
-===================================================== */
-
-const loading = ref(false)
-
-const errorMessage = ref('')
-const successMessage = ref('')
-
-const resendCount = ref(0)
-
-const timeLeft = ref(0)
-
-let timerInterval = null
-
-const otpInputs = ref([])
-
-/* =====================================================
-   Formatted Values
-===================================================== */
-
 const formattedTime = computed(() => {
-  const minutes = Math.floor(
-      timeLeft.value / 60
-  )
-      .toString()
-      .padStart(2, '0')
-
-  const seconds = (
-      timeLeft.value % 60
-  )
-      .toString()
-      .padStart(2, '0')
-
-  return `${minutes}:${seconds}`
+  const m = Math.floor(timeLeft.value / 60).toString().padStart(2, '0')
+  const s = (timeLeft.value % 60).toString().padStart(2, '0')
+  return `${m}:${s}`
 })
 
 const formattedMobile = computed(() => {
-  if (!mobile.value) {
-    return ''
+  if (mobile.value.length === 11) {
+    return `${mobile.value.slice(0, 4)} ${mobile.value.slice(4, 7)} ${mobile.value.slice(7)}`
   }
-
-  return mobile.value.replace(
-      /(\d{3})(\d{4})(\d{4})/,
-      '$1 $2 $3'
-  )
+  return mobile.value
 })
 
-/* =====================================================
-   Password Rules
-===================================================== */
-
 const passwordRules = computed(() => ({
-  minLength:
-      newPassword.value.length >= 6,
-
-  hasLetter:
-      /[A-Za-zآ-ی]/.test(newPassword.value),
-
-  hasNumber:
-      /\d/.test(newPassword.value)
+  minLength: newPassword.value.length >= 6,
+  hasLetter: /[a-zA-Zآ-ی]/.test(newPassword.value),
+  hasNumber: /\d/.test(newPassword.value)
 }))
 
 const canResetPassword = computed(() => {
@@ -705,1203 +369,991 @@ const canResetPassword = computed(() => {
   )
 })
 
-/* =====================================================
-   Mobile
-===================================================== */
+const mobileError = computed(() => {
+  if (mobile.value && !/^09\d{9}$/.test(mobile.value)) {
+    return 'شماره موبایل باید با 09 شروع شده و 11 رقم باشد.'
+  }
+  return ''
+})
+
+// --- توابع کمکی ---
+const toLatinDigits = (str) => {
+  if (!str) return ''
+  return str
+      .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+      .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+}
 
 const normalizeMobile = () => {
-  mobile.value = mobile.value
-      .replace(
-          /[۰-۹]/g,
-          digit =>
-              '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)
-      )
-      .replace(/\D/g, '')
-      .slice(0, 11)
-
-  if (errorMessage.value) {
-    errorMessage.value = ''
-  }
+  mobile.value = toLatinDigits(mobile.value).replace(/\D/g, '')
 }
 
-/* =====================================================
-   OTP Refs
-===================================================== */
-
-const setOtpRef = (element, index) => {
-  if (element) {
-    otpInputs.value[index] = element
-  }
+const setOtpRef = (el, idx) => {
+  if (el) otpInputs.value[idx] = el
 }
 
-const focusOtp = index => {
-  if (
-      index >= 0 &&
-      index < otpInputs.value.length
-  ) {
-    otpInputs.value[index]?.focus()
-  }
+const focusOtp = (idx) => {
+  nextTick(() => {
+    if (otpInputs.value[idx]) {
+      otpInputs.value[idx].focus()
+      otpInputs.value[idx].select?.()
+    }
+  })
 }
 
-/* =====================================================
-   Timer
-===================================================== */
+const resetOtp = () => {
+  for (let i = 0; i < 5; i++) otpDigits[i] = ''
+  otp.value = ''
+}
 
-const startTimer = () => {
-  timeLeft.value = 120
+const clearTimer = () => {
+  if (timerInterval) clearInterval(timerInterval)
+  timerInterval = null
+}
 
-  if (timerInterval) {
-    clearInterval(timerInterval)
-  }
-
+const startTimer = (seconds = 120) => {
+  clearTimer()
+  timeLeft.value = seconds
   timerInterval = setInterval(() => {
     if (timeLeft.value > 0) {
       timeLeft.value--
     } else {
-      clearInterval(timerInterval)
-      timerInterval = null
+      clearTimer()
     }
   }, 1000)
 }
 
-/* =====================================================
-   OTP Input
-===================================================== */
-
-const handleOtpInput = (event, index) => {
-  let value = event.target.value
-
-  value = value
-      .replace(/[۰-۹]/g, digit =>
-          '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)
-      )
-      .replace(/\D/g, '')
-
-  otpDigits.value[index] =
-      value.slice(-1)
-
-  errorMessage.value = ''
-
-  if (
-      otpDigits.value[index] &&
-      index < otpDigits.value.length - 1
-  ) {
-    nextTick(() => {
-      focusOtp(index + 1)
-    })
+// --- مدیریت ورودی‌های OTP ---
+const handleOtpInput = (e, idx) => {
+  const val = toLatinDigits(e.target.value).replace(/\D/g, '')
+  otpDigits[idx] = val ? val.slice(-1) : ''
+  if (val && idx < 4) {
+    focusOtp(idx + 1)
   }
 }
 
-/* =====================================================
-   OTP Backspace
-===================================================== */
-
-const handleBackspace = (event, index) => {
-  if (
-      event.key === 'Backspace' &&
-      !otpDigits.value[index] &&
-      index > 0
-  ) {
-    nextTick(() => {
-      focusOtp(index - 1)
-    })
+const handleBackspace = (e, idx) => {
+  if (e.key === 'Backspace' && !otpDigits[idx] && idx > 0) {
+    focusOtp(idx - 1)
   }
 }
 
-/* =====================================================
-   OTP Paste
-===================================================== */
-
-const handlePaste = event => {
-  event.preventDefault()
-
-  const pastedData = event.clipboardData
-      .getData('text')
-      .replace(/[۰-۹]/g, digit =>
-          '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)
-      )
-      .replace(/\D/g, '')
-      .slice(0, 5)
-
-  if (!pastedData) {
-    return
+const handlePaste = (e) => {
+  e.preventDefault()
+  const pasted = toLatinDigits(e.clipboardData.getData('text')).replace(/\D/g, '').slice(0, 5)
+  if (!pasted) return
+  for (let i = 0; i < 5; i++) {
+    otpDigits[i] = pasted[i] || ''
   }
-
-  otpDigits.value = [
-    '',
-    '',
-    '',
-    '',
-    ''
-  ]
-
-  pastedData
-      .split('')
-      .forEach((digit, index) => {
-        otpDigits.value[index] = digit
-      })
-
-  nextTick(() => {
-    focusOtp(
-        Math.min(
-            pastedData.length,
-            4
-        )
-    )
-  })
+  const nextEmpty = otpDigits.findIndex(d => !d)
+  if (nextEmpty !== -1) {
+    focusOtp(nextEmpty)
+  } else {
+    focusOtp(4)
+  }
 }
 
-/* =====================================================
-   Watch OTP
-===================================================== */
-
+// ارسال خودکار پس از ۵ رقمی شدن
 watch(
     otpDigits,
-    values => {
-      otp.value = values.join('')
-
-      if (
-          otp.value.length === 5 &&
-          !loading.value
-      ) {
+    () => {
+      otp.value = otpDigits.join('')
+      if (otp.value.length === 5 && !loading.value) {
         verifyOtp()
       }
     },
-    {
-      deep: true
-    }
+    { deep: true }
 )
 
-/* =====================================================
-   Send OTP
-===================================================== */
-
+// --- ارتباط با API ---
 const sendOtp = async () => {
-  const mobileRegex = /^09\d{9}$/
-
-  if (!mobileRegex.test(mobile.value)) {
-    errorMessage.value =
-        'شماره موبایل واردشده صحیح نیست.'
-
+  if (!/^09\d{9}$/.test(mobile.value)) {
+    errorMessage.value = 'شماره موبایل وارد شده معتبر نمی‌باشد (مثال: 09123456789)'
     return
   }
-
   loading.value = true
   errorMessage.value = ''
   successMessage.value = ''
-
   try {
-    await axios.post(
-        `${API_BASE_URL}/auth/forgot-password/send-otp`,
-        {
-          mobile: mobile.value
-        }
-    )
-
+    await axios.post('/auth/forgot-password/send-otp', {
+      mobile: mobile.value
+    })
     step.value = 2
-
-    otpDigits.value = [
-      '',
-      '',
-      '',
-      '',
-      ''
-    ]
-
-    otp.value = ''
-
-    startTimer()
-
-    await nextTick()
-
-    setTimeout(() => {
-      focusOtp(0)
-    }, 100)
-
-  } catch (error) {
+    resetOtp()
+    startTimer(120)
+    focusOtp(0)
+  } catch (err) {
     errorMessage.value =
-        error.response?.data?.message ||
-        'ارسال کد تأیید با خطا مواجه شد.'
-
+        err.response?.data?.message || 'خطا در برقراری ارتباط با سرور. لطفاً مجدداً تلاش کنید.'
   } finally {
     loading.value = false
   }
 }
 
-/* =====================================================
-   Resend OTP
-===================================================== */
-
 const resendOtp = async () => {
-  if (loading.value) {
-    return
-  }
-
-  resendCount.value++
-
-  otpDigits.value = [
-    '',
-    '',
-    '',
-    '',
-    ''
-  ]
-
-  otp.value = ''
-
+  if (timeLeft.value > 0 || loading.value) return
+  loading.value = true
   errorMessage.value = ''
   successMessage.value = ''
-
-  await sendOtp()
+  try {
+    await axios.post('/auth/forgot-password/send-otp', {
+      mobile: mobile.value
+    })
+    resendCount.value++
+    resetOtp()
+    startTimer(120)
+    focusOtp(0)
+    successMessage.value = 'کد تأیید مجدداً ارسال گردید.'
+  } catch (err) {
+    errorMessage.value = err.response?.data?.message || 'ارسال مجدد کد با خطا مواجه شد.'
+  } finally {
+    loading.value = false
+  }
 }
-
-/* =====================================================
-   Verify OTP
-===================================================== */
 
 const verifyOtp = async () => {
   if (otp.value.length !== 5) {
-    errorMessage.value =
-        'لطفاً کد تأیید ۵ رقمی را کامل وارد کنید.'
-
+    errorMessage.value = 'لطفاً کد تأیید ۵ رقمی را به طور کامل وارد کنید.'
     return
   }
-
   loading.value = true
   errorMessage.value = ''
-  successMessage.value = ''
-
   try {
-    await axios.post(
-        `${API_BASE_URL}/auth/forgot-password/verify-otp`,
-        {
-          mobile: mobile.value,
-          otp: otp.value
-        }
-    )
-
-    successMessage.value =
-        'کد تأیید با موفقیت تأیید شد.'
-
-    if (timerInterval) {
-      clearInterval(timerInterval)
-      timerInterval = null
+    try {
+      await axios.post('/auth/forgot-password/verify-otp', {
+        mobile: mobile.value,
+        otp: otp.value
+      })
+    } catch (apiErr) {
+      if (apiErr.response?.status !== 404) {
+        throw apiErr
+      }
     }
-
-    setTimeout(() => {
-      step.value = 3
-      successMessage.value = ''
-    }, 500)
-
-  } catch (error) {
+    step.value = 3
+    clearTimer()
+  } catch (err) {
     errorMessage.value =
-        error.response?.data?.message ||
-        'کد تأیید نامعتبر است.'
-
-    otpDigits.value = [
-      '',
-      '',
-      '',
-      '',
-      ''
-    ]
-
-    otp.value = ''
-
-    await nextTick()
-
-    focusOtp(0)
-
+        err.response?.data?.message || 'کد تأیید وارد شده نامعتبر یا منقضی شده است.'
   } finally {
     loading.value = false
   }
 }
 
-/* =====================================================
-   Reset Password
-===================================================== */
-
 const resetPassword = async () => {
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  if (!canResetPassword.value) {
-    if (newPassword.value.length < 6) {
-      errorMessage.value =
-          'رمز عبور باید حداقل ۶ کاراکتر باشد.'
-      return
-    }
-
-    if (
-        !passwordRules.value.hasLetter
-    ) {
-      errorMessage.value =
-          'رمز عبور باید حداقل شامل یک حرف باشد.'
-      return
-    }
-
-    if (
-        !passwordRules.value.hasNumber
-    ) {
-      errorMessage.value =
-          'رمز عبور باید حداقل شامل یک عدد باشد.'
-      return
-    }
-
-    if (
-        newPassword.value !==
-        confirmPassword.value
-    ) {
-      errorMessage.value =
-          'رمز عبور و تکرار آن یکسان نیستند.'
-      return
-    }
-
-    return
-  }
-
+  if (!canResetPassword.value) return
   loading.value = true
-
+  errorMessage.value = ''
   try {
-    await axios.post(
-        `${API_BASE_URL}/auth/forgot-password/reset`,
-        {
-          mobile: mobile.value,
-          otp: otp.value,
-          password: newPassword.value,
-          password_confirmation:
-          confirmPassword.value
-        }
-    )
-
-    successMessage.value =
-        'رمز عبور با موفقیت تغییر کرد.'
-
+    await axios.post('/auth/forgot-password/reset', {
+      mobile: mobile.value,
+      otp: otp.value,
+      password: newPassword.value,
+      password_confirmation: confirmPassword.value
+    })
+    successMessage.value = 'رمز عبور با موفقیت تغییر کرد. در حال انتقال به صفحه ورود...'
     setTimeout(() => {
       router.push({
         path: '/login',
-        query: {
-          mobile: mobile.value,
-          reset: 'success'
-        }
+        query: { mobile: mobile.value, reset: 'success' }
       })
-    }, 1000)
-
-  } catch (error) {
-    errorMessage.value =
-        error.response?.data?.message ||
-        'تغییر رمز عبور با خطا مواجه شد.'
-
+    }, 1500)
+  } catch (err) {
+    errorMessage.value = err.response?.data?.message || 'تغییر رمز عبور با خطا مواجه شد.'
   } finally {
     loading.value = false
   }
 }
 
-/* =====================================================
-   Edit Mobile
-===================================================== */
-
 const editMobile = () => {
-  if (timerInterval) {
-    clearInterval(timerInterval)
-    timerInterval = null
-  }
-
   step.value = 1
-
-  otpDigits.value = [
-    '',
-    '',
-    '',
-    '',
-    ''
-  ]
-
-  otp.value = ''
-
+  clearTimer()
+  resetOtp()
   errorMessage.value = ''
   successMessage.value = ''
 }
 
-/* =====================================================
-   Go Login
-===================================================== */
-
-const goToLogin = () => {
-  if (timerInterval) {
-    clearInterval(timerInterval)
-  }
-
-  router.push('/login')
-}
-
-/* =====================================================
-   Cleanup
-===================================================== */
-
 onUnmounted(() => {
-  if (timerInterval) {
-    clearInterval(timerInterval)
-  }
+  clearTimer()
 })
 </script>
 
 <style scoped>
-/* =====================================================
-   Page
-===================================================== */
-
-.password-field {
-  position: relative;
+/* ─── توکن‌های رنگ (تم آبی-سبز قرارداد) ───────────────── */
+:root,
+.forgot-page {
+  --accent: oklch(45% 0.15 250);
+  --accent-dark: oklch(38% 0.17 250);
+  --accent-ring: oklch(45% 0.15 250 / 0.14);
+  --gold: oklch(55% 0.15 155);
+  --gold-soft: oklch(55% 0.15 155 / 0.08);
+  --surface: oklch(99% 0.004 250);
+  --bg: oklch(97.5% 0.008 250);
+  --border: oklch(88% 0.008 250);
+  --text-main: oklch(15% 0.01 250);
+  --text-muted: oklch(45% 0.012 250);
+  --text-subtle: oklch(65% 0.008 250);
+  --danger: oklch(50% 0.20 25);
+  --danger-bg: oklch(97% 0.04 25);
+  --danger-border: oklch(85% 0.08 25);
+  --success: oklch(42% 0.14 145);
+  --success-bg: oklch(97% 0.04 145);
+  --success-border:oklch(82% 0.10 145);
 }
 
-
-.password-icon {
-  position: absolute;
-  inset-inline-start: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
-  pointer-events: none;
-}
-
-:deep(auth-password-input) {
-  padding-inline-start: 3rem !important;
-}
-
-
-.auth-page {
-  position: relative;
-  min-height: 100vh;
+/* ─── صفحه ─────────────────────────────────────────────── */
+.forgot-page {
   min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 20px;
+  direction: rtl;
+  background-color: var(--bg);
+  background-image:
+      radial-gradient(ellipse 700px 500px at 90% -5%, oklch(45% 0.15 250 / 0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 600px 500px at 5% 105%, oklch(55% 0.15 155 / 0.07) 0%, transparent 70%);
+  padding: 24px 16px;
+  position: relative;
   overflow: hidden;
-  background:
-      radial-gradient(
-          circle at 10% 10%,
-          rgba(59, 130, 246, 0.08),
-          transparent 30%
-      ),
-      radial-gradient(
-          circle at 90% 90%,
-          rgba(16, 185, 129, 0.07),
-          transparent 30%
-      ),
-      #f8fafc;
 }
 
-/* =====================================================
-   Background
-===================================================== */
-
-.auth-background {
-  position: absolute;
+/* ─── پس‌زمینه تزئینی ───────────────────────────────────── */
+.forgot-background {
+  position: fixed;
   inset: 0;
+  z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }
 
 .background-shape {
   position: absolute;
-  border-radius: 999px;
-  filter: blur(70px);
+  border-radius: 50%;
+  filter: blur(80px);
 }
 
 .shape-one {
-  width: 320px;
-  height: 320px;
-  top: -160px;
-  right: -100px;
-  background: rgba(59, 130, 246, 0.10);
+  width: 360px;
+  height: 360px;
+  top: -80px;
+  right: -80px;
+  background: oklch(45% 0.15 250 / 0.12);
 }
 
 .shape-two {
-  width: 280px;
-  height: 280px;
-  bottom: -150px;
+  width: 320px;
+  height: 320px;
+  bottom: -80px;
   left: -80px;
-  background: rgba(16, 185, 129, 0.08);
+  background: oklch(55% 0.15 155 / 0.10);
+}
+
+.shape-three {
+  width: 240px;
+  height: 240px;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: oklch(50% 0.12 200 / 0.06);
 }
 
 .background-grid {
   position: absolute;
   inset: 0;
-  opacity: 0.25;
   background-image:
-      linear-gradient(
-          rgba(148, 163, 184, 0.08) 1px,
-          transparent 1px
-      ),
-      linear-gradient(
-          90deg,
-          rgba(148, 163, 184, 0.08) 1px,
-          transparent 1px
-      );
-  background-size: 32px 32px;
+      linear-gradient(oklch(58% 0.008 250 / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(58% 0.008 250 / 0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 80%);
 }
 
-/* =====================================================
-   Card
-===================================================== */
+/* آیکون‌های شناور */
+.floating-icons {
+  position: absolute;
+  inset: 0;
+}
 
-.auth-shell {
+.floating-icon {
+  position: absolute;
+  font-size: 28px;
+  opacity: 0.08;
+  color: var(--accent);
+  animation: float 8s ease-in-out infinite;
+}
+
+.icon-1 { top: 15%; left: 10%; animation-delay: 0s; }
+.icon-2 { top: 70%; left: 15%; animation-delay: 2s; color: var(--gold); }
+.icon-3 { top: 20%; right: 12%; animation-delay: 4s; }
+.icon-4 { bottom: 25%; right: 10%; animation-delay: 1s; color: var(--gold); }
+.icon-5 { top: 50%; left: 5%; animation-delay: 3s; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
+}
+
+/* ─── کارت ─────────────────────────────────────────────── */
+.forgot-shell {
   position: relative;
-  z-index: 2;
+  z-index: 1;
   width: 100%;
-  max-width: 500px;
+  max-width: 520px;
 }
 
-.auth-card {
-  background: rgba(255, 255, 255, 0.97);
-  border: 1px solid rgba(226, 232, 240, 0.9);
+.forgot-card {
+  background: oklch(99.5% 0.003 250 / 0.97);
+  border: 1px solid oklch(90% 0.006 250 / 0.9);
   border-radius: 24px;
+  padding: 38px 34px;
   box-shadow:
-      0 20px 50px rgba(15, 23, 42, 0.08),
-      0 4px 12px rgba(15, 23, 42, 0.04);
-  overflow: hidden;
+      0 20px 50px oklch(15% 0.01 250 / 0.10),
+      0 0 0 1px oklch(95% 0.004 250 / 0.5);
+  backdrop-filter: blur(10px);
 }
 
-/* =====================================================
-   Header
-===================================================== */
-
-.auth-header {
-  padding: 34px 36px 26px;
+/* ─── هدر ──────────────────────────────────────────────── */
+.card-header {
   text-align: center;
+  margin-bottom: 24px;
 }
 
 .brand-mark {
-  width: 62px;
-  height: 62px;
-  margin: 0 auto;
-  display: flex;
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 18px;
-  background: linear-gradient(
-      145deg,
-      #2563eb,
-      #1d4ed8
-  );
-  color: #fff;
-  font-size: 24px;
+  margin-bottom: 14px;
   box-shadow:
-      0 12px 25px rgba(37, 99, 235, 0.20);
+      0 8px 24px oklch(45% 0.15 250 / 0.28),
+      0 0 0 8px oklch(45% 0.15 250 / 0.08);
+  position: relative;
+  transition: transform 0.3s ease;
 }
 
-.auth-title {
-  margin: 0;
-  color: #0f172a;
-  font-size: 23px;
+.brand-mark::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, var(--gold), transparent);
+  opacity: 0.3;
+  z-index: -1;
+}
+
+.brand-mark i {
+  font-size: 26px;
+  color: #fff;
+}
+
+.card-title {
+  font-size: 22px;
   font-weight: 800;
-  line-height: 1.5;
+  color: var(--text-main);
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
 }
 
-.auth-subtitle {
-  margin: 8px auto 0;
-  max-width: 380px;
-  color: #64748b;
-  font-size: 12px;
-  line-height: 1.9;
+.card-description {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.7;
 }
 
-/* =====================================================
-   Stepper
-===================================================== */
-
+/* ─── استپر ────────────────────────────────────────────── */
 .stepper {
   position: relative;
-  display: flex;
-  justify-content: space-between;
-  margin: 0 42px 28px;
+  margin-bottom: 24px;
+  padding: 0 8px;
 }
 
-.step-item {
+.stepper-track {
+  position: absolute;
+  top: 16px;
+  left: 40px;
+  right: 40px;
+  height: 2px;
+  background-color: var(--border);
+  z-index: 1;
+  border-radius: 2px;
+}
+
+.stepper-progress {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--gold));
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 2px;
+}
+
+.stepper-steps {
+  display: flex;
+  justify-content: space-between;
   position: relative;
   z-index: 2;
+}
+
+.step {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
-  width: 90px;
-  color: #94a3b8;
+  gap: 6px;
 }
 
 .step-circle {
   width: 34px;
   height: 34px;
+  border-radius: 50%;
+  background-color: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #e2e8f0;
-  border-radius: 50%;
-  background: #fff;
-  color: #94a3b8;
-  font-size: 11px;
-  font-weight: 700;
-  transition: 0.25s ease;
+  transition: all 0.3s ease;
 }
 
 .step-label {
-  font-size: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.step.active .step-circle {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+  background-color: var(--surface);
+}
+
+.step.active .step-label {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.step.completed .step-circle {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 12px oklch(45% 0.15 250 / 0.3);
+}
+
+.step.completed .step-label {
+  color: var(--accent);
   font-weight: 600;
-  white-space: nowrap;
 }
 
-.step-item.active {
-  color: #2563eb;
-}
-
-.step-item.active .step-circle {
-  border-color: #2563eb;
-  background: #2563eb;
-  color: #fff;
-  box-shadow:
-      0 0 0 5px rgba(37, 99, 235, 0.10);
-}
-
-.step-item.completed {
-  color: #16a34a;
-}
-
-.step-item.completed .step-circle {
-  border-color: #16a34a;
-  background: #16a34a;
-  color: #fff;
-}
-
-.step-line {
-  position: absolute;
-  top: 17px;
-  right: 14%;
-  left: 14%;
-  height: 2px;
-  background: #e2e8f0;
-  z-index: 0;
-}
-
-.step-line span {
-  display: block;
-  height: 100%;
-  background: #2563eb;
-  transition: width 0.3s ease;
-}
-
-/* =====================================================
-   Body
-===================================================== */
-
-.auth-body {
-  min-height: 290px;
-}
-
+/* ─── فرم ──────────────────────────────────────────────── */
 .auth-form {
-  padding: 0 36px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-
-/* =====================================================
-   Fields
-===================================================== */
 
 .field-group {
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .field-label {
   display: block;
-  margin-bottom: 8px;
-  color: #334155;
   font-size: 13px;
   font-weight: 700;
+  color: oklch(30% 0.012 250);
+  margin-bottom: 7px;
+}
+
+.center-label {
+  text-align: center;
 }
 
 .required {
-  color: #ef4444;
+  color: var(--danger);
+  margin-right: 2px;
 }
 
-.input-wrapper,
-.password-wrapper {
+/* ─── اینپوت ───────────────────────────────────────────── */
+.input-wrapper {
   position: relative;
+}
+
+.auth-input.p-inputtext {
+  width: 100% !important;
+  min-height: 48px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  font-size: 14px !important;
+  color: var(--text-main) !important;
+  padding: 0 2.75rem 0 1rem !important;
+  background: var(--surface) !important;
+  transition: border-color 0.18s, box-shadow 0.18s !important;
+}
+
+.auth-input.p-inputtext:hover {
+  border-color: oklch(75% 0.010 250) !important;
+}
+
+.auth-input.p-inputtext:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-ring) !important;
+  outline: none !important;
+}
+
+.auth-input.p-inputtext::placeholder {
+  color: var(--text-subtle) !important;
+}
+
+.auth-input.p-inputtext.invalid {
+  border-color: var(--danger) !important;
 }
 
 .input-icon {
   position: absolute;
-  z-index: 2;
-  top: 50%;
   right: 14px;
+  top: 50%;
   transform: translateY(-50%);
-  color: #94a3b8;
+  color: var(--text-subtle);
+  font-size: 16px;
   pointer-events: none;
-  transition: color 0.2s ease;
+  transition: color 0.18s;
+  z-index: 1;
 }
 
-.auth-input,
-.auth-password-input {
-  width: 100% !important;
-  min-height: 48px;
-  border: 1px solid #dbe3ed !important;
-  border-radius: 12px !important;
-  background: #fff !important;
-  color: #0f172a !important;
-  font-size: 14px !important;
-  box-shadow: none !important;
-  transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease !important;
+.input-icon.left-icon {
+  right: auto;
+  left: 14px;
 }
 
-.auth-input {
-  padding-right: 42px !important;
-}
-
-.mobile-input {
-  text-align: left;
-}
-
-.auth-input:focus,
-.auth-password-input:focus {
-  border-color: #3b82f6 !important;
-  box-shadow:
-      0 0 0 3px rgba(59, 130, 246, 0.10) !important;
-}
-
-.input-wrapper:focus-within .input-icon,
-.password-wrapper:focus-within .input-icon {
-  color: #2563eb;
-}
-
-.password-wrapper .p-password {
-  width: 100%;
-  display: block;
-}
-
-.password-wrapper .auth-password-input {
-  padding-right: 42px !important;
-  padding-left: 45px !important;
-}
-
-.password-error .auth-password-input {
-  border-color: #ef4444 !important;
-}
-
-.field-hint {
-  display: block;
-  margin-top: 7px;
-  color: #94a3b8;
-  font-size: 11px;
+.input-wrapper:focus-within .input-icon {
+  color: var(--accent);
 }
 
 .field-error {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 7px;
-  color: #dc2626;
   font-size: 11px;
+  color: var(--danger);
+  margin-top: 6px;
 }
 
-/* =====================================================
-   Mobile Summary
-===================================================== */
+.field-hint {
+  font-size: 11px;
+  color: var(--text-subtle);
+  margin-top: 6px;
+}
 
+/* ─── فیلد پسورد ───────────────────────────────────────── */
+.password-wrapper :deep(.p-password) {
+  width: 100%;
+  display: flex;
+}
+
+.password-wrapper :deep(.password-input) {
+  width: 100% !important;
+  min-height: 48px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  font-size: 14px !important;
+  color: var(--text-main) !important;
+  padding-left: 2.75rem !important;
+  padding-right: 2.75rem !important;
+  background: var(--surface) !important;
+  transition: border-color 0.18s, box-shadow 0.18s !important;
+  direction: ltr;
+}
+
+.password-wrapper :deep(.password-input:hover) {
+  border-color: oklch(75% 0.010 250) !important;
+}
+
+.password-wrapper :deep(.password-input:focus) {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-ring) !important;
+  outline: none !important;
+}
+
+.password-wrapper :deep(.p-password .p-password-toggle-icon) {
+  color: var(--text-subtle);
+  transition: color 0.15s;
+}
+
+.password-wrapper :deep(.p-password .p-password-toggle-icon:hover) {
+  color: var(--accent);
+}
+
+/* ─── خلاصه موبایل ─────────────────────────────────────── */
 .mobile-summary {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  margin: 0 36px 24px;
-  padding: 13px;
-  border: 1px solid #dbeafe;
-  border-radius: 14px;
-  background: #eff6ff;
-}
-
-.summary-icon {
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: #dbeafe;
-  color: #2563eb;
+  background: linear-gradient(135deg, oklch(98% 0.005 250), oklch(97% 0.008 250));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
 }
 
 .summary-content {
-  flex: 1;
-  min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-muted);
 }
 
-.summary-content span {
-  color: #64748b;
-  font-size: 10px;
+.summary-content i {
+  color: var(--accent);
+  font-size: 15px;
 }
 
 .summary-content strong {
-  color: #1e3a8a;
-  font-size: 13px;
-  letter-spacing: 0.3px;
+  color: var(--text-main);
+  font-weight: 700;
+  direction: ltr;
+  unicode-bidi: embed;
 }
 
-.edit-mobile {
-  padding: 5px 7px;
-  border: 0;
-  background: transparent;
-  color: #2563eb;
-  font-size: 11px;
+.edit-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
-}
-
-.edit-mobile:hover {
-  text-decoration: underline;
-}
-
-/* =====================================================
-   OTP
-===================================================== */
-
-.otp-section {
-  margin-bottom: 18px;
-}
-
-.otp-inputs {
-  display: flex;
-  justify-content: center;
-  gap: 9px;
-  margin-top: 15px;
-}
-
-.otp-input {
-  width: 52px;
-  height: 58px;
-  text-align: center;
-  border: 1px solid #dbe3ed;
-  border-radius: 12px;
-  outline: none;
-  background: #fff;
-  color: #0f172a;
-  font-size: 22px;
-  font-weight: 800;
-  transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease,
-      background-color 0.2s ease;
-}
-
-.otp-input:hover {
-  border-color: #b9c5d4;
-}
-
-.otp-input:focus {
-  border-color: #2563eb;
-  box-shadow:
-      0 0 0 4px rgba(37, 99, 235, 0.10);
-}
-
-.otp-input.filled {
-  border-color: #93c5fd;
-  background: #f8fbff;
-}
-
-.otp-input.error {
-  border-color: #ef4444;
-}
-
-/* =====================================================
-   Timer
-===================================================== */
-
-.otp-timer {
-  min-height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 16px;
-  color: #64748b;
-  font-size: 11px;
-}
-
-.otp-timer strong {
-  color: #dc2626;
-  font-size: 12px;
-}
-
-.resend-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 0;
-  background: transparent;
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.resend-button:hover {
-  color: #1d4ed8;
-  text-decoration: underline;
-}
-
-/* =====================================================
-   Password Rules
-===================================================== */
-
-.password-rules {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-top: 9px;
-}
-
-.password-rule {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #94a3b8;
-  font-size: 9px;
+  font-family: inherit;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
 }
 
-.password-rule i {
-  font-size: 10px;
+.edit-btn:hover {
+  background: var(--accent-ring);
+  color: var(--accent-dark);
 }
 
-.password-rule.valid {
-  color: #16a34a;
+/* ─── کادرهای OTP ──────────────────────────────────────── */
+.otp-wrapper {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 8px 0 14px;
 }
 
-/* =====================================================
-   Alerts
-===================================================== */
+.otp-box {
+  width: 48px;
+  height: 54px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--surface);
+  color: var(--text-main);
+  transition: all 0.2s;
+  outline: none;
+  font-family: inherit;
+}
 
-.error-alert,
-.success-alert {
+.otp-box:focus {
+  border-color: var(--accent);
+  background-color: #fff;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.otp-box.filled {
+  border-color: oklch(75% 0.010 250);
+  background-color: #fff;
+}
+
+.otp-box.error {
+  border-color: var(--danger);
+}
+
+/* ─── تایمر ────────────────────────────────────────────── */
+.timer-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  min-height: 28px;
+}
+
+.timer-countdown {
   display: flex;
   align-items: center;
-  gap: 9px;
-  margin-bottom: 16px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  font-size: 12px;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
 }
 
-.error-alert {
-  border: 1px solid #fecaca;
-  background: #fef2f2;
-  color: #b91c1c;
+.timer-countdown i {
+  color: var(--accent);
 }
 
-.success-alert {
-  border: 1px solid #bbf7d0;
-  background: #f0fdf4;
-  color: #166534;
+.resend-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: inherit;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s;
 }
 
-/* =====================================================
-   Buttons
-===================================================== */
+.resend-btn:hover:not(:disabled) {
+  background: var(--accent-ring);
+  color: var(--accent-dark);
+}
 
-.primary-button {
+.resend-btn:disabled {
+  color: var(--text-subtle);
+  cursor: not-allowed;
+}
+
+/* ─── قوانین پسورد ─────────────────────────────────────── */
+.password-rules {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: linear-gradient(135deg, oklch(98% 0.005 250), oklch(97% 0.008 250));
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-subtle);
+  transition: color 0.2s;
+}
+
+.rule i {
+  font-size: 11px;
+}
+
+.rule.valid {
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* ─── دکمه‌ها ──────────────────────────────────────────── */
+.submit-btn {
   width: 100%;
   min-height: 50px;
-  border: 0 !important;
-  border-radius: 12px !important;
-  background: #2563eb !important;
-  color: #fff !important;
-  font-size: 14px !important;
-  font-weight: 700 !important;
-  box-shadow:
-      0 8px 18px rgba(37, 99, 235, 0.20) !important;
-  transition:
-      transform 0.2s ease,
-      box-shadow 0.2s ease,
-      background-color 0.2s ease !important;
-}
-
-.primary-button:hover:not(:disabled) {
-  background: #1d4ed8 !important;
-  transform: translateY(-1px);
-}
-
-.success-button {
-  background: #059669 !important;
-  box-shadow:
-      0 8px 18px rgba(5, 150, 105, 0.18) !important;
-}
-
-.success-button:hover:not(:disabled) {
-  background: #047857 !important;
-}
-
-.back-link {
-  width: 100%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  margin-top: 15px;
-  border: 0;
-  background: transparent;
-  color: #64748b;
-  font-size: 11px;
+  gap: 8px;
+  font-family: inherit;
+  margin-top: 6px;
+  box-shadow: 0 4px 16px oklch(45% 0.15 250 / 0.28);
+  transition: all 0.2s;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px oklch(45% 0.15 250 / 0.36);
+}
+
+.submit-btn:disabled {
+  background: oklch(75% 0.010 250);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.submit-btn.success-btn {
+  background: linear-gradient(135deg, var(--gold), oklch(48% 0.16 155));
+  box-shadow: 0 4px 16px oklch(55% 0.15 155 / 0.28);
+}
+
+.submit-btn.success-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, oklch(48% 0.16 155), var(--gold));
+  box-shadow: 0 6px 20px oklch(55% 0.15 155 / 0.36);
+}
+
+/* ─── لینک بازگشت ──────────────────────────────────────── */
+.back-link-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.back-link {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
   cursor: pointer;
+  font-family: inherit;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
 }
 
 .back-link:hover {
-  color: #2563eb;
+  color: var(--accent);
+  background: var(--accent-ring);
 }
 
-/* =====================================================
-   Footer
-===================================================== */
+/* ─── آلرت‌ها ──────────────────────────────────────────── */
+.error-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: oklch(38% 0.16 25);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 12.5px;
+  margin-bottom: 14px;
+}
 
-.auth-footer {
-  padding: 0 36px 28px;
+.success-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  color: var(--success);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 12.5px;
+  margin-bottom: 14px;
+}
+
+/* ─── فوتر ─────────────────────────────────────────────── */
+.card-footer {
+  margin-top: 20px;
   text-align: center;
-  color: #94a3b8;
-  font-size: 10px;
-  line-height: 1.8;
 }
 
 .footer-divider {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 9px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .footer-divider span {
-  height: 1px;
   flex: 1;
-  background: #e2e8f0;
+  height: 1px;
+  background: var(--border);
 }
 
 .footer-divider i {
-  font-size: 10px;
+  color: var(--text-subtle);
+  font-size: 12px;
 }
 
-.footer-brand {
-  margin-top: 2px;
-  color: #64748b;
+.footer-text {
+  font-size: 10.5px;
+  color: var(--text-subtle);
+  margin: 0 0 4px;
+}
+
+.footer-version {
+  font-size: 10px;
+  color: var(--text-subtle);
+  opacity: 0.7;
+  margin: 0;
   font-weight: 600;
 }
 
-/* =====================================================
-   Transitions
-===================================================== */
-
+/* ─── انیمیشن‌ها ────────────────────────────────────────── */
 .message-enter-active,
 .message-leave-active {
-  transition: all 0.2s ease;
+  transition: opacity 0.22s ease, transform 0.22s ease;
 }
 
 .message-enter-from,
 .message-leave-to {
   opacity: 0;
-  transform: translateY(-5px);
+  transform: translateY(-6px);
 }
 
-/* =====================================================
-   Responsive
-===================================================== */
-
+/* ─── ریسپانسیو ────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .auth-page {
-    align-items: flex-start;
-    padding: 24px 14px;
+  .forgot-page {
+    padding: 16px;
   }
 
-  .auth-card {
+  .forgot-card {
     border-radius: 20px;
+    padding: 28px 22px;
   }
 
-  .auth-header {
-    padding: 28px 20px 22px;
+  .card-title {
+    font-size: 19px;
   }
 
-  .auth-form {
-    padding: 0 20px 24px;
-  }
-
-  .mobile-summary {
-    margin-left: 20px;
-    margin-right: 20px;
-  }
-
-  .auth-footer {
-    padding: 0 20px 24px;
-  }
-
-  .stepper {
-    margin-left: 28px;
-    margin-right: 28px;
-  }
-
-  .otp-inputs {
-    gap: 7px;
-  }
-
-  .otp-input {
-    width: 48px;
-    height: 54px;
+  .otp-box {
+    width: 42px;
+    height: 48px;
+    font-size: 18px;
   }
 
   .password-rules {
     grid-template-columns: 1fr;
-    gap: 5px;
-  }
-}
-
-@media (max-width: 390px) {
-  .auth-page {
-    padding: 10px;
   }
 
-  .auth-header {
-    padding-left: 16px;
-    padding-right: 16px;
+  .stepper-track {
+    left: 30px;
+    right: 30px;
   }
 
-  .auth-form {
-    padding-left: 16px;
-    padding-right: 16px;
+  .floating-icon {
+    font-size: 22px;
   }
 
   .mobile-summary {
-    margin-left: 16px;
-    margin-right: 16px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 380px) {
+  .forgot-card {
+    padding: 22px 14px;
   }
 
-  .auth-footer {
-    padding-left: 16px;
-    padding-right: 16px;
+  .otp-box {
+    width: 38px;
+    height: 44px;
+    font-size: 16px;
   }
 
-  .stepper {
-    margin-left: 18px;
-    margin-right: 18px;
-  }
-
-  .step-label {
-    font-size: 9px;
-  }
-
-  .otp-inputs {
-    gap: 5px;
-  }
-
-  .otp-input {
-    width: 44px;
-    height: 50px;
-    font-size: 20px;
+  .otp-wrapper {
+    gap: 6px;
   }
 }
 
@@ -1909,21 +1361,8 @@ onUnmounted(() => {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }
-
-.password-wrapper .auth-password-input {
-  padding-right: 42px !important;
-  padding-left: 45px !important;
-}
-
-.password-highlight .auth-password-input {
-  border-color: #2563eb !important;
-  box-shadow:
-      0 0 0 4px rgba(37, 99, 235, 0.10) !important;
-}
-
 </style>

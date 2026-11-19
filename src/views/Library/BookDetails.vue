@@ -213,7 +213,7 @@ import Select from 'primevue/select';
 import VuePersianDateTimePicker from 'vue3-persian-datetime-picker';
 import Dialog from 'primevue/dialog';
 import ProgressSpinner from 'primevue/progressspinner';
-import { libraryApi } from '@/services/libraryApi.js';
+import { libraryapi } from '@/services/libraryapi.js';
 import { useLibraryStatus } from '@/composables/useLibraryStatus.js';
 
 const route = useRoute();
@@ -263,7 +263,7 @@ const minPickupDate = computed(() => new Date());
 const loadBook = async () => {
   loading.value = true;
   try {
-    const response = await libraryApi.getBook(route.params.id);
+    const response = await libraryapi.getBook(route.params.id);
     book.value = response.data.data;
   } catch (error) {
     console.error('خطا در دریافت کتاب:', error);
@@ -274,7 +274,7 @@ const loadBook = async () => {
 
 const checkActiveReservation = async () => {
   try {
-    const response = await libraryApi.getMyReservations();
+    const response = await libraryapi.getMyReservations();
     const reservations = response.data.data || [];
     hasActiveReservation.value = reservations.some(r =>
         ['pending', 'approved', 'picked_up'].includes(r.status)
@@ -313,7 +313,7 @@ const submitReserve = async () => {
     const date = new Date(reserveForm.value.pickupDate);
     const formattedDate = date.toISOString().split('T')[0];
 
-    await libraryApi.createReservation({
+    await libraryapi.createReservation({
       book_copy_id: reserveForm.value.book_copy_id,
       expected_pickup_date: formattedDate,
     });

@@ -156,7 +156,7 @@ import Message from 'primevue/message';
 import ProgressSpinner from 'primevue/progressspinner';
 import Toast from 'primevue/toast';
 import ConfirmDialog from 'primevue/confirmdialog';
-import { libraryApi } from '@/services/libraryApi.js';
+import { libraryapi } from '@/services/libraryapi.js';
 import { useLibraryStatus } from '@/composables/useLibraryStatus.js';
 
 const toast = useToast();
@@ -188,7 +188,7 @@ const loadReservations = async () => {
       status = null;
     }
 
-    const response = await libraryApi.getMyReservations(status);
+    const response = await libraryapi.getMyReservations(status);
     let data = response.data.data || [];
 
     // فیلتر سمت کلاینت
@@ -235,7 +235,7 @@ const confirmCancel = (reservation) => {
     acceptClass: 'p-button-danger',
     accept: async () => {
       try {
-        await libraryApi.cancelReservation(reservation.id);
+        await libraryapi.cancelReservation(reservation.id);
         toast.add({
           severity: 'success',
           summary: 'موفق',

@@ -350,7 +350,7 @@ import Tag from 'primevue/tag';
 import Badge from 'primevue/badge';
 import Toast from 'primevue/toast';
 import ConfirmDialog from 'primevue/confirmdialog';
-import { libraryApi } from '@/services/libraryApi.js';
+import { libraryapi } from '@/services/libraryapi.js';
 import { libraryAdminApi } from '@/services/libraryAdminApi.js';
 import { useLibraryStatus } from '@/composables/useLibraryStatus.js';
 
@@ -488,7 +488,7 @@ const loadBooks = async () => {
   loading.value = true;
   try {
     const params = searchQuery.value ? { search: searchQuery.value } : {};
-    const response = await libraryApi.getBooks(params);
+    const response = await libraryapi.getBooks(params);
     books.value = response.data.data || [];
   } catch (error) {
     console.error('خطا:', error);
@@ -499,7 +499,7 @@ const loadBooks = async () => {
 
 const loadCategories = async () => {
   try {
-    const response = await libraryApi.getCategories();
+    const response = await libraryapi.getCategories();
     categories.value = response.data.data || [];
   } catch (error) {
     console.error('خطا:', error);
@@ -545,7 +545,7 @@ const confirmDeleteBook = (book) => {
 const openCopiesDialog = async (book) => {
   // دریافت جزئیات به‌روز کتاب (با نسخه‌ها)
   try {
-    const response = await libraryApi.getBook(book.id);
+    const response = await libraryapi.getBook(book.id);
     currentBook.value = response.data.data;
   } catch {
     currentBook.value = book;
