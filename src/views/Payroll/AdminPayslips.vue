@@ -156,7 +156,7 @@ import Message from 'primevue/message';
 import Select from 'primevue/select';
 import { useToast } from 'primevue/usetoast';
 
-import { payrollApi } from '@/Services/payrollApi.js';
+import { payrollApi } from '@/services/payrollapi.js';
 import PayslipHeader from './PayslipHeader.vue';
 import PayslipItems from './PayslipItems.vue';
 import PayslipSummary from './PayslipSummary.vue';
